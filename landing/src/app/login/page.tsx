@@ -13,10 +13,25 @@ export default function LoginPage() {
   const supabase = createClient();
 
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
+    setError("");
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      options: {
+        // Keep redirect in Next so middleware will protect /dashboard
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Success: Supabase will redirect to /auth/callback.
+    // Do NOT force navigation here; middleware will handle redirecting to protected pages.
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -33,15 +48,17 @@ export default function LoginPage() {
       setError(err.message);
     } else {
       window.location.href = "/dashboard";
+      localStorage.setItem("rsd_user", JSON.stringify({ email }));
+      return;
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", background: "#3B82F6", color: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "#F8FAFC", display: "flex", flexDirection: "column" }}>
+      <header
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 19 }}>
-          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(10)" }} />
+          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
           Road Safety Dar es Salaam
         </div>
         <nav style={{ display: "flex", gap: 16 }}>
@@ -122,6 +139,27 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer
+        style={{
+          marginTop: "auto",
+          textAlign: "center",
+          padding: "32px 24px",
+          background: "linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)",
+          borderTop: "1px solid #E2E8F0",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/accident-protection.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.7 }} />
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>Road Safety Dar es Salaam</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#64748B" }}>
+            &copy; {new Date().getFullYear()} <strong>Mwijay Davie</strong>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

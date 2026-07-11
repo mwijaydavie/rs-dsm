@@ -103,12 +103,16 @@ export default function ReportPage() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setForm((f) => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
-        alert(`Location captured: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setForm((f) => ({ ...f, lat, lng }));
+        alert(
+          `GPS captured: ${lat.toFixed(4)}, ${lng.toFixed(4)}.\n\n` +
+            `Select District → Ward → Street below (GPS only fills lat/lng in this version).`
+        );
       },
       () => alert("Could not get location. Enable GPS on your device.")
     );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

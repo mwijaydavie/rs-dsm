@@ -1,32 +1,10 @@
-import Link from "next/link";
+import PremiumTopNav from "@/components/PremiumTopNav";
 
 export default function Home() {
   return (
     <>
-      {/* Topbar — Sky blue (#3B82F6) */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 24px",
-          background: "#3B82F6",
-          color: "#fff",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontFamily: '"Hubot Sans","Nunito","Quicksand",system-ui,sans-serif', fontWeight: 700, fontSize: "19px" }}>
-          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(10)" }} />
-          Road Safety Dar es Salaam
-        </div>
-        <nav style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-          <Link href="/dashboard/" className="topbar-link">Dashboard</Link>
-          <Link href="/report/" className="topbar-link">Report</Link>
-          <Link href="/login" className="btn-signin">Sign In</Link>
-        </nav>
-      </header>
+      <PremiumTopNav variant="default" />
+
 
       <main style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
         {/* Hero Section */}
@@ -37,7 +15,7 @@ export default function Home() {
               <span style={{ color: "#60A5FA" }}>Dar es Salaam</span>
             </h1>
             <p style={{ margin: "12px 0 0", fontSize: "20px", color: "#94A3B8", maxWidth: "56ch" }}>
-              Real-time accident hotspot intelligence for Tanzania&apos;s commercial capital. Crowdsourced reports, official police data, and AI-powered safety insights for every junction.
+              Real-time accident hotspot intelligence for Tanzania's commercial capital. Crowdsourced reports, official police data, and AI-powered safety insights for every junction.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "16px", position: "relative", flexShrink: 0 }}>
@@ -80,7 +58,7 @@ export default function Home() {
             { label: "Total Reports", sublabel: "Crowdsourced + official", value: "1,200+", icon: "/add-report.png", gradient: "linear-gradient(135deg, #DBEAFE, #FFFFFF)", color: "#3B82F6" },
             { label: "Fatal Accidents", sublabel: "Since Jan 2024", value: "45", icon: "/stone-hazard.png", gradient: "linear-gradient(135deg, #FEE2E2, #FFFFFF)", color: "#F87171" },
             { label: "Tracked Junctions", sublabel: "Across 5 districts", value: "60+", icon: "/map-icon.png", gradient: "linear-gradient(135deg, #FEF3C7, #FFFFFF)", color: "#D97706" },
-            { label: "Police Verified", sublabel: "Official records", value: "850+", icon: "/badge-72x72.png", gradient: "linear-gradient(135deg, #DCFCE7, #FFFFFF)", color: "#16A34A" },
+            { label: "Police Verified", sublabel: "Official records", value: "850+", icon: "/fingerprint-icon.png", gradient: "linear-gradient(135deg, #DCFCE7, #FFFFFF)", color: "#16A34A" },
           ].map((card) => (
             <div key={card.label} className="featured-stat-card" style={{ background: card.gradient }}>
               <img src={card.icon} alt="" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.7, marginBottom: 8 }} />
@@ -155,9 +133,51 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        <small>SDG 11.2 — Safer urban transport in Dar es Salaam · Built by Mwijay · 2026</small>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/accident-protection.png" alt="" style={{ width: 24, height: 24, objectFit: "contain", opacity: 0.6 }} />
+            <span style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>Road Safety Dar es Salaam</span>
+          </div>
+          <p style={{ margin: 0, color: "#64748B", fontSize: 14, lineHeight: 1.6, textAlign: "center" }}>
+            &copy; {new Date().getFullYear()} <strong>Mwijay Davie</strong> — All Rights Reserved.
+            <br />
+            Built with passion for safer roads. Contact:{" "}
+            <a href="mailto:mwijaydavie@gmail.com" style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>
+              mwijaydavie@gmail.com
+            </a>
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px 20px", marginTop: 4 }}>
+            {["Ilala", "Kinondoni", "Temeke", "Ubungo", "Kigamboni"].map((d) => (
+              <Link key={d} href={`/dashboard?district=${d.toLowerCase()}`} style={{ color: "#64748B", textDecoration: "none", fontSize: 13, fontWeight: 500 }}
+              >{d}</Link>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: "#94A3B8", letterSpacing: "0.5px", marginTop: 8 }}>
+            SDG 11.2 — Safer urban transport in Dar es Salaam · Tanzania
+          </div>
+          <div style={{ fontSize: 10, color: "#CBD5E1", fontFamily: "monospace", opacity: 0.5 }}>
+            {/* Inline verification hash — this site was engineered with dedication */}
+            {/* HASH: RS-DSM-2026-MWIJAY-DAVIE-VERIFIED-7g9k2m4x */}
+            {/* Proof of work: Engineered by Mwijay Davie using Next.js + Supabase + AI */}
+          </div>
+        </div>
       </footer>
 
+      {/* Console credit — visible to developers */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+        console.log("%c Road Safety Dar es Salaam %c",
+          "background:#1E3A5F;color:#fff;padding:8px 16px;border-radius:4px 0 0 4px;font-size:16px;font-weight:bold",
+          "background:#3B82F6;color:#fff;padding:8px 16px;border-radius:0 4px 4px 0;font-size:16px"
+        );
+        console.log("%c Engineered with passion by Mwijay Davie %c mwijaydavie@gmail.com %c",
+          "background:#0F172A;color:#22C55E;padding:6px 12px;border-radius:4px 0 0 4px;font-size:13px",
+          "background:#22C55E;color:#0F172A;padding:6px 12px;border-radius:0 4px 4px 0;font-size:13px"
+        );
+        console.log("HASH: RS-DSM-2026-MWIJAY-DAVIE-VERIFIED-7g9k2m4x");
+        console.log("This is a verified build by Mwijay Davie. Unauthorized reproduction is prohibited.");
+        `
+      }} />
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -166,15 +186,17 @@ export default function Home() {
         .topbar-link {
           color: #fff; text-decoration: none; font-size: 16px; font-weight: 600;
           padding: 8px 12px; border-radius: 8px; transition: background 0.24s;
+          letter-spacing: -0.2px;
         }
-        .topbar-link:hover { background: rgba(255,255,255,0.15); }
+        .topbar-link:hover { background: rgba(255,255,255,0.12); }
         .btn-signin {
-          background: #60A5FA; color: #fff; padding: 0.4rem 1rem; border-radius: 6px;
+          background: rgba(255,255,255,0.15); color: #fff; padding: 0.5rem 1.2rem; border-radius: 8px;
           font-weight: 700; text-decoration: none; font-size: 0.85rem;
-          box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+          backdropFilter: blur(4px);
+          border: 1px solid rgba(255,255,255,0.2);
           transition: background 0.2s, transform 0.15s;
         }
-        .btn-signin:hover { background: #3B82F6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
+        .btn-signin:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
         .hero-section {
           display: flex; align-items: flex-start; justify-content: space-between; gap: 48px;
           margin-bottom: 48px; padding: 48px;
@@ -281,7 +303,36 @@ export default function Home() {
         .district-card { padding: 16px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; text-align: center; }
         .district-name { font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif; font-weight: 700; font-size: 16px; color: #0F172A; }
         .district-wards { font-size: 12px; color: #475569; margin-top: 4px; }
-        .site-footer { text-align: center; padding: 48px 24px; color: #94A3B8; font-size: 14px; border-top: 1px solid #E2E8F0; }
+        .site-footer {
+          text-align: center; padding: 48px 24px; background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+          border-top: 1px solid #E2E8F0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+          .hero-section { flex-direction: column; padding: 32px 24px; gap: 24px; }
+          .hero-section h1 { font-size: 32px !important; }
+          .hero-section p { font-size: 16px !important; }
+          .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+          .kpi-value { font-size: 28px !important; }
+          .action-bar { flex-direction: column; align-items: stretch; padding: 16px 20px; }
+          .btn-primary, .btn-secondary, .btn-ghost { justify-content: center; min-height: 48px; padding: 1em 2em; font-size: 11px; }
+          .lang-switch { margin-left: 0; justify-content: center; margin-top: 8px; }
+          .charts-grid { grid-template-columns: 1fr !important; }
+          .chart-card.wide { grid-column: span 1 !important; }
+          .featured-stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+          .featured-stat-card { max-width: 100%; height: 200px; }
+          .featured-stat-value { font-size: 28px !important; }
+          header { flex-wrap: wrap; gap: 8px; padding: 12px 16px !important; }
+          header nav { gap: 12px !important; }
+          .district-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+          .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+          .featured-stat-grid { grid-template-columns: 1fr !important; }
+          .kpi-card { padding: 16px; }
+          .hero-section h1 { font-size: 24px !important; }
+        }
       `}</style>
     </>
   );

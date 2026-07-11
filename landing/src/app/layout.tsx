@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Road Safety Dar es Salaam — Real-time Accident Intelligence",
   description: "Crowdsourced accident hotspot intelligence for Tanzania's commercial capital.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/icon-192x192.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,4 +1,4 @@
-"use client";
+T"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -79,7 +79,7 @@ export default function EditorPage() {
     <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", background: "#3B82F6", color: "#fff" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 19 }}>
-          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(10)" }} />
+          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
           Editor Queue
         </div>
         <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
