@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+dev.db
+prisma/dev.db
+*.local
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+/src/generated/prisma
+
+# TypeScript build cache
+*.tsbuildinfo

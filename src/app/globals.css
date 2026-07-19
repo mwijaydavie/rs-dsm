@@ -1,0 +1,100 @@
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Hubot+Sans:wght@500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --sky: #3B82F6;
+  --sky-bright: #60A5FA;
+  --sky-deep: #1D4ED8;
+  --sky-soft: #DBEAFE;
+  --sun: #FBBF24;
+  --sun-bright: #FCD34D;
+  --sun-deep: #D97706;
+  --leaf: #22C55E;
+  --leaf-soft: #DCFCE7;
+  --leaf-deep: #16A34A;
+  --coral: #F87171;
+  --coral-soft: #FEE2E2;
+  --ink: #0F172A;
+  --ink-muted: #475569;
+  --ink-subtle: #94A3B8;
+  --outline: #E2E8F0;
+  --surface: #F8FAFC;
+}
+
+* { box-sizing: border-box; }
+
+/* Responsive map utility */
+.rsd-map { height: 480px; }
+@media (max-width: 768px) {
+  .rsd-map { height: 300px !important; }
+}
+@media (max-width: 480px) {
+  .rsd-map { height: 260px !important; }
+}
+
+/* Stack auto/1fr/auto grids on mobile */
+.rsd-grid-auto-1fr { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+@media (max-width: 640px) {
+  .rsd-grid-auto-1fr { grid-template-columns: 1fr !important; gap: 8px; }
+  .rsd-grid-auto-1fr > *:last-child { text-align: left !important; }
+}
+
+/* Prevent horizontal overflow on any container */
+img, svg, video { max-width: 100%; height: auto; }
+.rsd-overflow-wrap { overflow-wrap: break-word; word-wrap: break-word; hyphens: auto; }
+
+body {
+  margin: 0;
+  font-family: "Atkinson Hyperlegible", "Nunito Sans", "Inter", system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  background: var(--surface);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Hubot Sans", "Nunito", "Quicksand", system-ui, sans-serif;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+h1 { font-size: 40px; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 32px; font-weight: 700; line-height: 1.25; }
+h3 { font-size: 24px; font-weight: 600; line-height: 1.3; }
+
+/* ===== GLOBAL MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  body { font-size: 16px; }
+  h1 { font-size: 28px !important; }
+  h2 { font-size: 22px !important; }
+  h3 { font-size: 18px !important; }
+  
+  /* Make all main containers use full width with smaller padding */
+  main { padding: 16px !important; }
+  
+  /* Make all cards stack vertically on mobile */
+  .rsd-card-row { flex-direction: column !important; }
+  .rsd-card-row > * { width: 100% !important; }
+  
+  /* Make tables scroll horizontally */
+  .rsd-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  
+  /* Make buttons full-width on mobile */
+  .rsd-btn-full-mobile { width: 100% !important; justify-content: center !important; }
+  
+  /* Reduce grid columns on mobile */
+  .rsd-grid-2 { grid-template-columns: 1fr !important; }
+  .rsd-grid-3 { grid-template-columns: 1fr !important; }
+  .rsd-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  
+  /* Better touch targets */
+  button, a, select, input { min-height: 44px; }
+  input, select { font-size: 16px !important; } /* Prevents iOS zoom */
+}
+
+@media (max-width: 480px) {
+  .rsd-grid-4 { grid-template-columns: 1fr 1fr !important; }
+  .rsd-hide-mobile { display: none !important; }
+}
