@@ -190,8 +190,8 @@ export async function POST(request: NextRequest) {
       .insert(profileData);
 
     if (profileErr) {
-      await admin.from("User").delete().eq("id", newUser.id).catch(() => {});
-      await adminAuth.auth.admin.deleteUser(supabaseUserId).catch(() => {});
+      try { await admin.from("User").delete().eq("id", newUser.id); } catch {}
+      try { await adminAuth.auth.admin.deleteUser(supabaseUserId); } catch {}
       return NextResponse.json({ error: profileErr.message }, { status: 500 });
     }
 

@@ -149,7 +149,7 @@ export default function PremiumTopNav({
     position: "sticky",
     top: 0,
     zIndex: 100,
-    background: scrolled ? "rgba(255, 255, 255, 0.85)" : brandGradient,
+    background: scrolled ? "rgba(255, 255, 255, 0.85)" : BRAND_GRADIENT,
     backdropFilter: scrolled ? "saturate(180%) blur(16px)" : "saturate(180%) blur(8px)",
     WebkitBackdropFilter: scrolled ? "saturate(180%) blur(16px)" : "saturate(180%) blur(8px)",
     borderBottom: scrolled ? "1px solid rgba(15, 23, 42, 0.06)" : "1px solid rgba(255, 255, 255, 0.1)",
