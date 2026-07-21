@@ -9,6 +9,8 @@ import CountUp from "@/components/CountUp";
 import ScrollReveal from "@/components/ScrollReveal";
 import LoadingScreen from "@/components/LoadingScreen";
 import Footer from "@/components/Footer";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { FilterBar, FilterState } from "@/components/FilterBar";
 import dynamic from "next/dynamic";
 
 const DashboardMap = dynamic(() => import("@/components/DashboardMap"), {
@@ -91,6 +93,8 @@ export default function DashboardPage() {
   const [selectedHour, setSelectedHour] = useState("all");
   const [seriousMode, setSeriousMode] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [view, setView] = useState<"dashboard" | "analytics">("dashboard");
+  const [filters, setFilters] = useState<FilterState>({ from: "", to: "", year: "", month: "", district: "", ward: "", severity: "", weather: "", roadType: "" });
   const [aiSummary, setAiSummary] = useState<{
     text: string;
     provider?: string;
@@ -136,6 +140,16 @@ export default function DashboardPage() {
       <PremiumTopNav variant="dashboard" />
 
       <main style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 12px", position: "relative", zIndex: 1, flex: 1, width: "100%", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <button onClick={() => setView("dashboard")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", background: view === "dashboard" ? "#0F172A" : "#E2E8F0", color: view === "dashboard" ? "#fff" : "#475569" }}>
+            Dashboard
+          </button>
+          <button onClick={() => setView("analytics")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", background: view === "analytics" ? "#0F172A" : "#E2E8F0", color: view === "analytics" ? "#fff" : "#475569" }}>
+            Analytics
+          </button>
+        </div>
+
+        {view === "dashboard" ? (<>
         <ExportBar
           accidentCount={
             selectedHour === "all"
@@ -342,6 +356,19 @@ export default function DashboardPage() {
               </div>
             </div>
           </ScrollReveal>
+        )}
+        </>) : (
+        <div>
+          <FilterBar filters={filters} onChange={setFilters} />
+          <AnalyticsDashboard filters={{
+            from: filters.from || undefined,
+            to: filters.to || undefined,
+            district: filters.district || undefined,
+            severity: filters.severity || undefined,
+            weather: filters.weather || undefined,
+            roadType: filters.roadType || undefined,
+          }} />
+        </div>
         )}
       </main>
       <Footer />

@@ -38,7 +38,7 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string): void {
   doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("Road Safety Dar es Salaam", PAGE_MARGIN, 7);
+  doc.text("Dar es Salaam Road Safety", PAGE_MARGIN, 7);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -68,7 +68,7 @@ function drawFooter(doc: jsPDF, pageNumber: number, totalPages: number): void {
   doc.setFontSize(7.5);
   doc.setTextColor(SLATE_500[0], SLATE_500[1], SLATE_500[2]);
   doc.text(
-    "Road Safety Dar es Salaam · roadsafetydar@gmail.com",
+    "Dar es Salaam Road Safety · roadsafetydar@gmail.com",
     PAGE_MARGIN,
     FOOTER_Y
   );

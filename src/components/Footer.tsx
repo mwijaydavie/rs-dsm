@@ -91,7 +91,7 @@ export default function Footer() {
           gap: 12,
         }}>
           <span style={{ fontSize: 13, color: "#94A3B8" }}>
-            &copy; {year} <strong style={{ color: "#64748B" }}>Road Safety Dar es Salaam</strong> — All Rights Reserved.
+            &copy; {year} <strong style={{ color: "#64748B" }}>Dar es Salaam Road Safety</strong> — All Rights Reserved.
           </span>
           <div style={{ display: "flex", gap: 16 }}>
             <Link href="/privacy" style={{ fontSize: 12, color: "#94A3B8", textDecoration: "none" }}>Privacy</Link>

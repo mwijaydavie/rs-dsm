@@ -1,4 +1,4 @@
-# 🚦 Road Safety Dar es Salaam — Real-time Accident Intelligence
+# 🚦 Dar es Salaam Road Safety — Real-time Accident Intelligence
 
 > **Crowdsourced accident hotspot intelligence for Tanzania's commercial capital.**  
 > Every report saves a life. Every hotspot identified prevents the next crash.
@@ -30,7 +30,7 @@
 
 ## 1. Project Identity
 
-### 🚦 Road Safety Dar es Salaam
+### 🚦 Dar es Salaam Road Safety
 
 **To a 10-year-old:** This is a map that shows where car crashes happen in Dar es Salaam so people know where to be careful and the government knows where to fix the roads.
 
@@ -490,7 +490,7 @@ Open `http://localhost:3000` in your browser. You should see the landing page.
 **What it does:** Shows the project overview, key statistics, and navigation to main features.
 
 Open `http://localhost:3000` — you'll see:
-- A hero section with "Road Safety Dar es Salaam" branding
+- A hero section with "Dar es Salaam Road Safety" branding
 - Live KPI badges (1,200+ Reports, 850+ Verified, 60+ Junctions, 40% Police Verified)
 - Feature cards (Report an Accident, Dashboard, Live Hotspots, Data Export)
 - Footer with district links and SDG 11.2 reference
@@ -935,7 +935,7 @@ import twilio from "twilio";
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 export async function sendVerificationSMS(phone: string, status: string) {
   await client.messages.create({
-    body: `Your Road Safety Dar report has been ${status}. Thank you for contributing.`,
+    body: `Your Dar es Salaam Road Safety report has been ${status}. Thank you for contributing.`,
     from: process.env.TWILIO_PHONE_NUMBER,
     to: phone,
   });
@@ -1202,7 +1202,7 @@ git push origin main
 
 **Version 2.0 Vision:**
 
-Road Safety Dar es Salaam becomes **the national road safety intelligence platform for Tanzania**, expanding city-by-city:
+Dar es Salaam Road Safety becomes **the national road safety intelligence platform for Tanzania**, expanding city-by-city:
 1. **Mwanza** — Lake Zone commercial hub, second city
 2. **Arusha** — EAC capital, northern tourist corridor
 3. **Zanzibar** — Tourism-dependent island with unique traffic patterns

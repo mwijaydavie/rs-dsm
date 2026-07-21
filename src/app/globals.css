@@ -1,4 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Hubot+Sans:wght@500;600;700;800&display=swap");
+
+:root { --bg: #F8FAFC; --bg-card: #FFFFFF; --text: #0F172A; --text-muted: #64748B; --border: #E2E8F0; --shadow: rgba(15, 23, 42, 0.06); }
+[data-theme="dark"] { --bg: #0F172A; --bg-card: #1E293B; --text: #F1F5F9; --text-muted: #94A3B8; --border: #334155; --shadow: rgba(0, 0, 0, 0.3); }
 @import "tailwindcss";
 
 @theme {
@@ -48,6 +51,9 @@ body {
   font-family: "Atkinson Hyperlegible", "Nunito Sans", "Inter", system-ui, sans-serif;
   font-size: 18px;
   line-height: 1.55;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.2s, color 0.2s;
   letter-spacing: 0.01em;
   background: var(--surface);
   color: var(--ink);

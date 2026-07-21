@@ -6,7 +6,7 @@ export default function TermsPage() {
 
       <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 24 }}>1. Acceptance</h2>
       <p style={{ color: "#475569", fontSize: 14 }}>
-        By using Road Safety Dar es Salaam, you agree to these terms. If you do not agree, do not use the service.
+        By using Dar es Salaam Road Safety, you agree to these terms. If you do not agree, do not use the service.
       </p>
 
       <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 24 }}>2. User Reports</h2>

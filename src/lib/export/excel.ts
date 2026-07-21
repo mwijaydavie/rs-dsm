@@ -52,7 +52,7 @@ function buildSummarySheet(incidents: ExportAccident[], response: ExportResponse
     : ["", "", "", "", "", "all"];
 
   const rows: (string | number)[][] = [
-    ["Road Safety Dar es Salaam — Incident Export"],
+    ["Dar es Salaam Road Safety — Incident Export"],
     [],
     ["Generated", new Date(response.generatedAt).toLocaleString()],
     ["Total incidents", stats.total],

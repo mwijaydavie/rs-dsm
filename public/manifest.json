@@ -1,6 +1,6 @@
 {
-  "name": "Road Safety Dar es Salaam",
-  "short_name": "Road Safety Dar",
+  "name": "Dar es Salaam Road Safety",
+  "short_name": "Dar Road Safety",
   "description": "Real-time accident hotspot intelligence for Tanzania's commercial capital.",
   "start_url": "/",
   "display": "standalone",

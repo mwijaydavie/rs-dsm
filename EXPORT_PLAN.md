@@ -1,4 +1,4 @@
-# Road Safety Dar — Export Feature Spec
+# Dar es Salaam Road Safety — Export Feature Spec
 
 **Status:** planning → ready to ship
 **Owner:** Mwijay Davie
@@ -22,7 +22,7 @@ A **client-side export module** on the dashboard. Three export modes, two format
 
 Single-document A4 portrait, branded header band, footer with page numbers. Sections:
 
-1. Header band (navy `#0F172A`, 12mm tall): logo glyph + "Road Safety Dar es Salaam — Incident Report"
+1. Header band (navy `#0F172A`, 12mm tall): logo glyph + "Dar es Salaam Road Safety — Incident Report"
 2. Subhead line: date range + filter summary + generated timestamp
 3. KPI strip (3-column table): Total · Fatal · Critical+Serious · Minor
 4. Severity distribution table (severity · count · %)

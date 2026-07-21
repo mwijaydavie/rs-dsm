@@ -1,5 +1,5 @@
 -- ============================================================
--- Supabase App Metadata Sync - Road Safety Dar es Salaam
+-- Supabase App Metadata Sync - Dar es Salaam Road Safety
 -- ============================================================
 -- Hii script inahakikisha kuwa kila user anapopata role update
 -- (kutoka kwenye UserProfile table), role yake inasawazishwa

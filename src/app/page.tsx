@@ -288,10 +288,10 @@ export default function Home() {
         <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <img src="/accident-protection.png" alt="" style={{ width: 24, height: 24, objectFit: "contain", opacity: 0.6 }} />
-            <span style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>Road Safety Dar es Salaam</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>Dar es Salaam Road Safety</span>
           </div>
           <p style={{ margin: 0, color: "#64748B", fontSize: 14, lineHeight: 1.6, textAlign: "center" }}>
-            &copy; {new Date().getFullYear()} <strong>Road Safety Dar es Salaam</strong> — All Rights Reserved.
+            &copy; {new Date().getFullYear()} <strong>Dar es Salaam Road Safety</strong> — All Rights Reserved.
             <br />
             Built with passion for safer roads. Contact:{" "}
             <a href="mailto:roadsafetydar@gmail.com" style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>

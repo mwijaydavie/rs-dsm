@@ -37,7 +37,7 @@ export default function PrivacyPage() {
 
       <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 24 }}>6. Contact</h2>
       <p style={{ color: "#475569", fontSize: 14 }}>
-        Road Safety Dar es Salaam<br />
+        Dar es Salaam Road Safety<br />
         Email: <a href="mailto:roadsafetydar@gmail.com" style={{ color: "#3B82F6" }}>roadsafetydar@gmail.com</a>
       </p>
     </div>

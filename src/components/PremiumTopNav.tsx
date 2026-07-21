@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { useTheme } from "@/lib/ThemeContext";
 
 interface NavUser {
   email: string;
@@ -111,6 +112,8 @@ export default function PremiumTopNav({
     }
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     try {
@@ -414,6 +417,24 @@ export default function PremiumTopNav({
                         Review Queue
                       </Link>
                     )}
+                    <button
+                      onClick={toggleTheme}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        borderBottom: "1px solid #F1F5F9",
+                        color: "#0F172A",
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {theme === "dark" ? "☀ Light Mode" : "☾ Dark Mode"}
+                    </button>
                     <button
                       onClick={handleSignOut}
                       style={{

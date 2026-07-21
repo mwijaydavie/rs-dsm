@@ -1,4 +1,4 @@
-# Supabase Role Setup Guide — Road Safety Dar es Salaam
+# Supabase Role Setup Guide — Dar es Salaam Road Safety
 
 ## 📋 Overview
 

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import LoadingScreenWrapper from "@/components/LoadingScreenWrapper";
+import { ThemeProvider } from "@/lib/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "Road Safety Dar es Salaam — Real-time Accident Intelligence",
-  description: "Crowdsourced accident hotspot intelligence for Tanzania's commercial capital.",
+  title: "Dar es Salaam Road Safety — Real-time Accident Intelligence",
+  description: "Dar es Salaam Road Safety — Crowdsourced accident hotspot intelligence for Tanzania's commercial capital.",
   icons: {
     icon: "/favicon.svg",
     apple: "/icon-192x192.png",
@@ -21,14 +22,16 @@ export default function RootLayout({
         <meta name="theme-color" content="#1E3A5F" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Road Safety Dar" />
+        <meta name="apple-mobile-web-app-title" content="Dar es Salaam Road Safety" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer />
       </head>
       <body>
-        <LoadingScreenWrapper />
-        {children}
+        <ThemeProvider>
+          <LoadingScreenWrapper />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
