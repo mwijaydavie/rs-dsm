@@ -45,7 +45,7 @@ function ChartCard({ title, children, style }: { title: string; children: React.
   );
 }
 
-export function AnalyticsDashboard({ filters }: { filters?: Filters }) {
+export function AnalyticsDashboard({ filters, showKpiCards = true, showAnnualTrend = true }: { filters?: Filters; showKpiCards?: boolean; showAnnualTrend?: boolean }) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -81,14 +81,14 @@ export function AnalyticsDashboard({ filters }: { filters?: Filters }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+      {showKpiCards && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
         <KpiCard label="Total Accidents" value={data.total} color={COLORS.blue} icon="∑" />
         <KpiCard label="Fatal Accidents" value={data.fatalities} color={COLORS.red} icon="!" />
         <KpiCard label="Serious Injuries" value={data.casualties} color={COLORS.orange} icon="⚠" />
         <KpiCard label="Minor Injuries" value={Math.max(0, data.casualties - data.fatalities)} color={COLORS.green} icon="•" />
         <KpiCard label="Total Deaths" value={data.fatalities} color={COLORS.red} icon="†" />
         <KpiCard label="Vehicles Involved" value={totalVehicles.reduce((s, v) => s + v.count, 0)} color={COLORS.purple} icon="⊞" />
-      </div>
+      </div>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 20 }}>
         <ChartCard title="Monthly Accident Trend">
@@ -104,7 +104,7 @@ export function AnalyticsDashboard({ filters }: { filters?: Filters }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Annual Accident Trend">
+        {showAnnualTrend && <ChartCard title="Annual Accident Trend">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.annual}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
@@ -115,7 +115,7 @@ export function AnalyticsDashboard({ filters }: { filters?: Filters }) {
               <Bar dataKey="count" fill={COLORS.blue} radius={[4, 4, 0, 0]} name="Accidents" />
             </BarChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartCard>}
 
         <ChartCard title="Accident Severity Distribution">
           <ResponsiveContainer width="100%" height={300}>

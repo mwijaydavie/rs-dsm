@@ -108,75 +108,6 @@ export default function Home() {
           </section>
         </ScrollReveal>
 
-        {/* About Section */}
-        <ScrollReveal>
-          <section className="home-about">
-            <div className="home-about-text">
-              <span className="home-section-badge">About the System</span>
-              <h2>Road Safety Intelligence Platform</h2>
-              <p>
-                Dar es Salaam Road Safety is a comprehensive accident monitoring and analytics platform
-                serving the five districts of Tanzania&apos;s commercial capital. The system aggregates
-                crowdsourced reports from citizens alongside official Traffic Police and TANROADS data,
-                providing real-time hotspot intelligence for authorities and the public.
-              </p>
-              <p>
-                Every report is reviewed by traffic officers before appearing on the verified map,
-                ensuring data integrity. The platform supports evidence-based decision making for
-                road safety interventions, junction improvements, and targeted enforcement.
-              </p>
-              <div className="home-about-grid">
-                <div className="home-about-stat">
-                  <span className="home-about-stat-num">{stats ? formatNum(stats.total) : "0"}</span>
-                  <span className="home-about-stat-label">Total Reports</span>
-                </div>
-                <div className="home-about-stat">
-                  <span className="home-about-stat-num">{stats ? formatNum(stats.verified) : "0"}</span>
-                  <span className="home-about-stat-label">Verified</span>
-                </div>
-                <div className="home-about-stat">
-                  <span className="home-about-stat-num">{stats ? formatNum(stats.junctionCount) : "0"}</span>
-                  <span className="home-about-stat-label">Junctions Tracked</span>
-                </div>
-                <div className="home-about-stat">
-                  <span className="home-about-stat-num">5</span>
-                  <span className="home-about-stat-label">Districts</span>
-                </div>
-              </div>
-            </div>
-            <div className="home-about-visual">
-              <div className="home-about-card">
-                <div className="home-about-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10c0 4.5-3.5 8.5-8 9.5V12l-6-6"/><path d="M12 2a10 10 0 0 0-10 10c0 4.5 3.5 8.5 8 9.5V12l6-6"/></svg>
-                </div>
-                <h4>Community Powered</h4>
-                <p>Citizens report incidents via mobile or web. Anonymous by default.</p>
-              </div>
-              <div className="home-about-card">
-                <div className="home-about-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                </div>
-                <h4>Police Verified</h4>
-                <p>Traffic officers review and verify each report before it goes live.</p>
-              </div>
-              <div className="home-about-card">
-                <div className="home-about-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                </div>
-                <h4>Data Driven</h4>
-                <p>Advanced analytics identify high-risk zones and peak accident periods.</p>
-              </div>
-              <div className="home-about-card">
-                <div className="home-about-card-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                </div>
-                <h4>Hotspot Mapping</h4>
-                <p>Interactive map with clustering, heatmap, and severity indicators.</p>
-              </div>
-            </div>
-          </section>
-        </ScrollReveal>
-
         {/* KPI Stats */}
         {stats && (
           <ScrollReveal>
@@ -230,6 +161,8 @@ export default function Home() {
               <p>Comprehensive data visualizations powered by verified police reports and citizen submissions.</p>
             </div>
             <AnalyticsDashboard
+              showKpiCards={false}
+              showAnnualTrend={false}
               filters={{
                 from: filters.from || undefined,
                 to: filters.to || undefined,
@@ -369,35 +302,6 @@ export default function Home() {
           margin: 0; font-size: 15px; color: #64748B; max-width: 600px; margin-inline: auto;
         }
 
-        .home-about {
-          display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 48px;
-          padding: 48px; background: #fff; border-radius: 20px;
-          border: 1px solid #E2E8F0;
-        }
-        .home-about-text h2 { margin: 0 0 16px; font-size: clamp(22px, 3vw, 30px); }
-        .home-about-text p { font-size: 15px; color: #475569; line-height: 1.7; margin: 0 0 12px; }
-        .home-about-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
-        .home-about-stat {
-          padding: 16px; background: #F8FAFC; border-radius: 12px; text-align: center;
-          border: 1px solid #E2E8F0;
-        }
-        .home-about-stat-num {
-          display: block; font-family: "Hubot Sans","Nunito",system-ui,sans-serif;
-          font-size: 28px; font-weight: 800; color: #3B82F6;
-        }
-        .home-about-stat-label { font-size: 12px; color: #64748B; font-weight: 600; }
-        .home-about-visual { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        .home-about-card {
-          padding: 24px 20px; background: #F8FAFC; border-radius: 16px;
-          border: 1px solid #E2E8F0; text-align: center;
-        }
-        .home-about-card-icon {
-          width: 56px; height: 56px; border-radius: 14px; background: #EFF6FF;
-          display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
-        }
-        .home-about-card h4 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #0F172A; }
-        .home-about-card p { margin: 0; font-size: 13px; color: #64748B; line-height: 1.5; }
-
         .home-kpi-grid {
           display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 16px; margin-bottom: 48px;
@@ -435,24 +339,18 @@ export default function Home() {
         @media (max-width: 768px) {
           .home-hero-content { padding: 32px 24px; }
           .home-hero-title { font-size: 28px; }
-          .home-about { grid-template-columns: 1fr; padding: 24px; }
-          .home-about-visual { grid-template-columns: repeat(2, 1fr); }
           .home-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
           .home-kpi-value { font-size: 28px; }
           .home-awareness-grid { grid-template-columns: 1fr; }
-          .home-about-stat-num { font-size: 22px; }
         }
         @media (max-width: 480px) {
           .home-hero-content { padding: 24px 16px; }
           .home-hero-actions { flex-direction: column; }
           .home-hero-actions a { width: 100%; justify-content: center; text-align: center; }
           .home-hero-strip { flex-direction: column; gap: 8px; }
-          .home-about-visual { grid-template-columns: 1fr; }
           .home-kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
           .home-kpi-card { padding: 16px 12px; }
           .home-kpi-value { font-size: 24px; }
-          .home-about { padding: 16px; }
-          .home-about-grid { grid-template-columns: 1fr 1fr; }
           .home-section-header { text-align: left; }
         }
       `}</style>
