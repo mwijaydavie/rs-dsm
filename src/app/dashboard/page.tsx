@@ -11,6 +11,8 @@ import LoadingScreen from "@/components/LoadingScreen";
 import Footer from "@/components/Footer";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { FilterBar, FilterState } from "@/components/FilterBar";
+import { useLang } from "@/lib/LanguageContext";
+import { t } from "@/lib/i18n";
 import dynamic from "next/dynamic";
 
 const DashboardMap = dynamic(() => import("@/components/DashboardMap"), {
@@ -93,6 +95,8 @@ export default function DashboardPage() {
   const [selectedHour, setSelectedHour] = useState("all");
   const [seriousMode, setSeriousMode] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { lang } = useLang();
+  const _ = (key: string, fb?: string) => t(key, lang, fb);
   const [view, setView] = useState<"dashboard" | "analytics">("dashboard");
   const [filters, setFilters] = useState<FilterState>({ from: "", to: "", year: "", month: "", district: "", ward: "", severity: "", weather: "", roadType: "" });
   const [aiSummary, setAiSummary] = useState<{
@@ -142,10 +146,10 @@ export default function DashboardPage() {
       <main style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 12px", position: "relative", zIndex: 1, flex: 1, width: "100%", boxSizing: "border-box" }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <button onClick={() => setView("dashboard")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", background: view === "dashboard" ? "#0F172A" : "#E2E8F0", color: view === "dashboard" ? "#fff" : "#475569" }}>
-            Dashboard
+            {_("nav.dashboard")}
           </button>
           <button onClick={() => setView("analytics")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", background: view === "analytics" ? "#0F172A" : "#E2E8F0", color: view === "analytics" ? "#fff" : "#475569" }}>
-            Analytics
+            {_("dashboard.analytics")}
           </button>
         </div>
 
@@ -176,7 +180,7 @@ export default function DashboardPage() {
             <div style={{ flex: 1, minWidth: 280 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#D4AF37" }}>
-                  AI Safety Brief
+                  {_("dashboard.aiBrief")}
                 </span>
                 {aiSummary.provider && (
                   <span style={{ fontSize: 10, color: "#94A3B8", padding: "2px 6px", border: "1px solid #334155", borderRadius: 999 }}>
@@ -213,12 +217,12 @@ export default function DashboardPage() {
           <ScrollReveal>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
               {[
-                { label: "Total Reports", value: stats.total, color: "#F87171" },
-                { label: "Verified", value: stats.verified, color: "#22C55E" },
-                { label: "Fatal", value: stats.fatal, color: "#DC2626" },
-                { label: "Critical", value: stats.critical, color: "#FBBF24" },
-                { label: "Serious", value: stats.serious, color: "#3B82F6" },
-                { label: "Junctions", value: stats.junctionCount, color: "#A855F7" },
+                { label: _("kpi.totalReports"), value: stats.total, color: "#F87171" },
+                { label: _("dashboard.verified"), value: stats.verified, color: "#22C55E" },
+                { label: _("dashboard.fatal"), value: stats.fatal, color: "#DC2626" },
+                { label: _("dashboard.critical"), value: stats.critical, color: "#FBBF24" },
+                { label: _("dashboard.serious"), value: stats.serious, color: "#3B82F6" },
+                { label: _("dashboard.junctions"), value: stats.junctionCount, color: "#A855F7" },
               ].map((kpi) => (
                 <div key={kpi.label} style={{
                   background: "#fff", padding: "20px 16px", borderRadius: 16,
@@ -239,10 +243,10 @@ export default function DashboardPage() {
 
         {/* Map controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, padding: "12px 16px", background: "#fff", borderRadius: 12, flexWrap: "wrap" }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>Filter by Hour</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>{_("dashboard.filterHour")}</label>
           <select value={selectedHour} onChange={(e) => setSelectedHour(e.target.value)}
             style={{ padding: "8px 16px", border: "1px solid #E2E8F0", borderRadius: 12, fontSize: 14, minHeight: 44 }}>
-            <option value="all">All Hours</option>
+            <option value="all">{_("dashboard.allHours")}</option>
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i}>{i}:00 - {(i + 1) % 24}:00</option>
             ))}
@@ -257,7 +261,7 @@ export default function DashboardPage() {
               boxShadow: seriousMode ? "0 4px 14px rgba(220, 38, 38, 0.35)" : "none", transition: "all 0.15s ease",
             }}>
             <span aria-hidden style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: seriousMode ? "#fff" : "#DC2626", boxShadow: seriousMode ? "0 0 0 3px rgba(255,255,255,0.25)" : "none" }} />
-            {seriousMode ? "Serious Mode: ON" : "Serious Mode"}
+            {seriousMode ? `${_("dashboard.seriousMode")}: ON` : _("dashboard.seriousMode")}
           </button>
           {seriousMode && <span style={{ fontSize: 12, color: "#64748B", marginLeft: 4 }}>Showing fatal / critical / serious, verified or with applauds.</span>}
         </div>

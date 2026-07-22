@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile, error: pErr } = await admin
       .from("UserProfile")
-      .select("userId, role, supabaseUid, user:User(id, email, firstName, lastName, role)")
+      .select("userId, role, supabaseUid, user:User(id, email, firstName, lastName, role, status)")
       .eq("supabaseUid", user.id)
       .maybeSingle();
 
@@ -78,6 +78,14 @@ export async function GET(request: NextRequest) {
 
     if (profile) {
       const dbUser = (profile as any).user;
+      const userStatus = dbUser?.status ?? "ACTIVE";
+      if (userStatus !== "ACTIVE") {
+        return NextResponse.json({
+          user: null,
+          status: userStatus,
+          message: userStatus === "PENDING" ? "Your account is awaiting administrator approval." : userStatus === "REJECTED" ? "Your account has been rejected. Please contact the administrator." : "Your account has been disabled.",
+        });
+      }
       return NextResponse.json({
         user: {
           email: dbUser?.email ?? user.email,

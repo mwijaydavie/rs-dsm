@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
       dbUser: dbUser
         ? {
             id: dbUser.id,
-            username: dbUser.username,
             email: dbUser.email,
             role: dbUser.role,
           }

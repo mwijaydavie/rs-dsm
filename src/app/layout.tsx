@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import LoadingScreenWrapper from "@/components/LoadingScreenWrapper";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Dar es Salaam Road Safety — Real-time Accident Intelligence",
@@ -29,8 +30,10 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <LoadingScreenWrapper />
-          {children}
+          <LanguageProvider>
+            <LoadingScreenWrapper />
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

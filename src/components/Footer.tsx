@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import { useLang } from "@/lib/LanguageContext";
+import { t } from "@/lib/i18n";
 
 export default function Footer() {
+  const { lang } = useLang();
+  const _ = (key: string, fb?: string) => t(key, lang, fb);
   const year = new Date().getFullYear();
 
   return (
@@ -40,13 +44,13 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Quick Links</h4>
+            <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{_("nav.home")}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { href: "/", label: "Home" },
-                { href: "/dashboard", label: "Dashboard" },
-                { href: "/report", label: "Report Accident" },
-                { href: "/login", label: "Sign In" },
+                { href: "/", label: _("nav.home") },
+                { href: "/dashboard", label: _("nav.dashboard") },
+                { href: "/report", label: _("nav.report") },
+                { href: "/login", label: _("nav.login") },
               ].map((l) => (
                 <Link key={l.href} href={l.href} style={{ color: "#475569", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "color 0.2s" }}
                   onMouseEnter={(e) => e.currentTarget.style.color = "#3B82F6"}
@@ -71,7 +75,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Contact</h4>
+            <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{_("footer.contact")}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, color: "#475569" }}>
               <a href="mailto:roadsafetydar@gmail.com" style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>roadsafetydar@gmail.com</a>
               <span>Dar es Salaam, Tanzania</span>
@@ -91,11 +95,11 @@ export default function Footer() {
           gap: 12,
         }}>
           <span style={{ fontSize: 13, color: "#94A3B8" }}>
-            &copy; {year} <strong style={{ color: "#64748B" }}>Dar es Salaam Road Safety</strong> — All Rights Reserved.
+            &copy; {year} <strong style={{ color: "#64748B" }}>Dar es Salaam Road Safety</strong> — {_("footer.rights")}.
           </span>
           <div style={{ display: "flex", gap: 16 }}>
-            <Link href="/privacy" style={{ fontSize: 12, color: "#94A3B8", textDecoration: "none" }}>Privacy</Link>
-            <Link href="/terms" style={{ fontSize: 12, color: "#94A3B8", textDecoration: "none" }}>Terms</Link>
+            <Link href="/privacy" style={{ fontSize: 12, color: "#94A3B8", textDecoration: "none" }}>{_("footer.privacy")}</Link>
+            <Link href="/terms" style={{ fontSize: 12, color: "#94A3B8", textDecoration: "none" }}>{_("footer.terms")}</Link>
           </div>
         </div>
       </div>

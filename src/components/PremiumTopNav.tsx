@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useTheme } from "@/lib/ThemeContext";
+import { useLang } from "@/lib/LanguageContext";
+import { t } from "@/lib/i18n";
 
 interface NavUser {
   email: string;
@@ -114,6 +116,8 @@ export default function PremiumTopNav({
   }, [mobileOpen]);
 
   const { theme, toggle: toggleTheme } = useTheme();
+  const { lang, toggleLang } = useLang();
+  const _ = (key: string, fb?: string) => t(key, lang, fb);
 
   const handleSignOut = async () => {
     try {
@@ -136,11 +140,11 @@ export default function PremiumTopNav({
   const isLoggedIn = !!user && !user.isGuest;
 
   const links: { href: string; label: string; show: boolean }[] = [
-    { href: "/", label: "Home", show: variant !== "login" && variant !== "editor" && variant !== "authority" },
-    { href: "/dashboard", label: "Dashboard", show: variant !== "login" && isStaff },
-    { href: "/report", label: "Report Accident", show: variant !== "login" && variant !== "editor" },
-    { href: "/editor", label: "Queue", show: (variant === "editor" || isStaff) && variant !== "login" },
-    { href: "/authority", label: "Authority", show: (variant === "authority" || isAdmin) && variant !== "login" },
+    { href: "/", label: _("nav.home"), show: variant !== "login" && variant !== "editor" && variant !== "authority" },
+    { href: "/dashboard", label: _("nav.dashboard"), show: variant !== "login" && isStaff },
+    { href: "/report", label: _("nav.report"), show: variant !== "login" && variant !== "editor" },
+    { href: "/editor", label: _("nav.queue"), show: (variant === "editor" || isStaff) && variant !== "login" },
+    { href: "/authority", label: _("nav.authority"), show: (variant === "authority" || isAdmin) && variant !== "login" },
   ].filter((l): l is { href: string; label: string; show: true } => l.show === true);
 
   const isActive = (href: string) => {
@@ -418,6 +422,24 @@ export default function PremiumTopNav({
                       </Link>
                     )}
                     <button
+                      onClick={toggleLang}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        borderBottom: "1px solid #F1F5F9",
+                        color: "#0F172A",
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {lang === "en" ? "🇹🇿 Kiswahili" : "🇬🇧 English"}
+                    </button>
+                    <button
                       onClick={toggleTheme}
                       style={{
                         display: "block",
@@ -433,7 +455,7 @@ export default function PremiumTopNav({
                         cursor: "pointer",
                       }}
                     >
-                      {theme === "dark" ? "☀ Light Mode" : "☾ Dark Mode"}
+                      {theme === "dark" ? _("nav.lightMode") : _("nav.darkMode")}
                     </button>
                     <button
                       onClick={handleSignOut}

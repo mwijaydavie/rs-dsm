@@ -19,13 +19,12 @@ async function main() {
     const admin = await prisma.user.create({
       data: {
         email: adminEmail,
-        username: "admin",
         firstName: adminFirstName,
         lastName: adminLastName,
         password: hashedPassword,
         role: "ADMIN",
+        status: "ACTIVE",
         isActive: true,
-        dateJoined: new Date(),
       },
     });
     await prisma.userProfile.create({

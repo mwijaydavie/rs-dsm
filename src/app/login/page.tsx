@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PremiumTopNav from "@/components/PremiumTopNav";
 import { createClient } from "@/lib/supabase-browser";
+import { useLang } from "@/lib/LanguageContext";
+import { t } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { lang } = useLang();
+  const _ = (key: string, fb?: string) => t(key, lang, fb);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -97,8 +101,8 @@ export default function LoginPage() {
           }}
         >
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#0F172A" }}>Sign In</h2>
-            <p style={{ color: "#64748B", margin: 0, fontSize: 14 }}>Authorized personnel only</p>
+            <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#0F172A" }}>{_("login.title")}</h2>
+            <p style={{ color: "#64748B", margin: 0, fontSize: 14 }}>{_("login.noAccess")}</p>
           </div>
 
           {error && (
@@ -121,7 +125,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleEmailLogin}>
             <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Email *</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{_("login.email")} *</span>
               <input
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 required placeholder="your@email.com" autoComplete="email"
@@ -132,7 +136,7 @@ export default function LoginPage() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Password *</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{_("login.password")} *</span>
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"} value={password}
@@ -156,13 +160,13 @@ export default function LoginPage() {
                 cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, minHeight: 48,
                 boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)", marginBottom: 16,
               }}>
-              {loading ? "Please wait..." : "Sign In"}
+              {loading ? _("loading") : _("login.submit")}
             </button>
           </form>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
-            <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500 }}>OR</span>
+            <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500 }}>{lang === "en" ? "OR" : "AU"}</span>
             <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
           </div>
 
@@ -192,7 +196,7 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Continue with Google
+            {_("login.google")}
           </button>
         </div>
       </div>
@@ -209,10 +213,10 @@ export default function LoginPage() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <img src="/accident-protection.png" alt="" style={{ width: 18, height: 18, opacity: 0.7 }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>Dar es Salaam Road Safety</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>{_("app.title")}</span>
           </div>
           <div style={{ fontSize: 11, color: "#64748B" }}>
-            &copy; {new Date().getFullYear()} <strong>Dar es Salaam Road Safety</strong>
+            &copy; {new Date().getFullYear()} <strong>{_("app.title")}</strong>
           </div>
         </div>
       </footer>

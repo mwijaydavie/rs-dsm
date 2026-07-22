@@ -74,16 +74,22 @@ model Junction {
 
 model User {
   id                  Int              @id @default(autoincrement())
-  username            String           @unique
   email               String           @unique
   firstName           String           @default("")
   lastName            String           @default("")
+  phone               String           @default("")
   password            String
   role                String           @default("COMMUNITY")
+  organization        String           @default("")
+  status              String           @default("ACTIVE")
   isActive            Boolean          @default(true)
   lastLogin           DateTime?
-  dateJoined          DateTime         @default(now())
+  createdById         Int?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
+  createdBy           User?            @relation("created_users", fields: [createdById], references: [id])
+  createdUsers        User[]           @relation("created_users")
   profile             UserProfile?
   submittedAccidents  Accident[]       @relation("submitted_accidents")
   verifiedAccidents   Accident[]       @relation("verified_accidents")

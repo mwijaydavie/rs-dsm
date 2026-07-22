@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
     const { data: users, error: uErr } = await admin
       .from("User")
       .select(`
-        id, email, username, firstName, lastName, role, isActive, dateJoined,
+        id, email, firstName, lastName, role, isActive, status, createdAt, updatedAt,
         profile:UserProfile(role, phone, badgeNumber, station, employeeId, supabaseUid)
       `)
-      .order("dateJoined", { ascending: false })
+      .order("createdAt", { ascending: false })
       .limit(200);
 
     if (uErr) {
@@ -153,13 +153,13 @@ export async function POST(request: NextRequest) {
       .from("User")
       .insert({
         email: email.toLowerCase(),
-        username: email.split("@")[0],
         firstName,
         lastName,
         role,
         password: hashedPassword,
+        organization: role === "POLICE" ? "Traffic Police" : role === "TANROADS" ? "TANROADS" : "",
+        status: "ACTIVE",
         isActive: true,
-        dateJoined: new Date().toISOString(),
       })
       .select("id")
       .single();

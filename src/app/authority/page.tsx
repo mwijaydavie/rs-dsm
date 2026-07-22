@@ -8,11 +8,12 @@ import { createClient } from "@/lib/supabase-browser";
 interface UserItem {
   id: number;
   email: string;
-  username: string;
   firstName: string;
   lastName: string;
+  role: string;
+  status: string;
   isActive: boolean;
-  dateJoined: string;
+  createdAt: string;
   profile: {
     role: string;
     phone: string;
@@ -451,9 +452,9 @@ export default function AuthorityPage() {
                             <div style={{ fontWeight: 600, color: "#0F172A" }}>
                               {u.firstName} {u.lastName}
                             </div>
-                            <div style={{ fontSize: 11, color: "#94A3B8" }}>@{u.username}</div>
+                            <div style={{ fontSize: 11, color: "#94A3B8" }}>{u.email}</div>
                           </td>
-                          <td style={{ padding: "12px 16px", color: "#475569" }}>{u.email}</td>
+                          <td style={{ padding: "12px 16px", color: "#475569" }}>{u.role}</td>
                           <td style={{ padding: "12px 16px", textAlign: "center" }}>
                             <select
                               value={currentRole}
@@ -488,7 +489,7 @@ export default function AuthorityPage() {
                             </button>
                           </td>
                           <td style={{ padding: "12px 16px", textAlign: "right", color: "#94A3B8", fontSize: 11 }}>
-                            {new Date(u.dateJoined).toLocaleDateString()}
+                            {new Date(u.createdAt).toLocaleDateString()}
                           </td>
                         </tr>
                       );
