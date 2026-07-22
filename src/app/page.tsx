@@ -1,575 +1,459 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import PremiumTopNav from "@/components/PremiumTopNav";
+import Footer from "@/components/Footer";
 import CountUp from "@/components/CountUp";
 import ScrollReveal from "@/components/ScrollReveal";
+import dynamic from "next/dynamic";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { FilterBar, type FilterState } from "@/components/FilterBar";
+import { useLang } from "@/lib/LanguageContext";
+import { t } from "@/lib/i18n";
 
-interface Stats {
-  total: number;
-  verifiedCount: number;
-  junctionCount: number;
-  verifiedPercent: number;
-  totalFatal: number;
-  totalSerious: number;
-  totalCritical: number;
-  totalMinor: number;
-  fatalPercent: number;
-  seriousPercent: number;
-  criticalPercent: number;
-  minorPercent: number;
-  totalFatalities: number;
-  totalCasualties: number;
-  top5: { area: string; reports: number; severity: string; color: string }[];
-  formatNum: (n: number) => string;
+const DashboardMap = dynamic(() => import("@/components/DashboardMap"), { ssr: false });
+
+interface Accident {
+  id: number; lat: number; lng: number; severity: string;
+  vehicleTypes: string[]; district: string; ward?: string;
+  junctionName: string; occurredAt: string; casualties: number;
+  fatalities: number; verified: boolean; upvoteCount: number;
+  intensity: number; photoUrl?: string; description?: string;
+  weather?: string; roadCondition?: string;
 }
 
 export default function Home() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const { lang } = useLang();
+  const _ = (key: string, fb?: string) => t(key, lang, fb);
+
+  const [accidents, setAccidents] = useState<Accident[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [filters, setFilters] = useState<FilterState>({
+    from: "", to: "", year: "", month: "", district: "",
+    ward: "", severity: "", weather: "", roadType: "",
+  });
+
+  const fetchAccidents = useCallback(async () => {
+    try {
+      const res = await fetch("/api/accidents?status=verified");
+      if (res.ok) {
+        const data = await res.json();
+        setAccidents(data || []);
+      }
+    } catch {}
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stats");
+      if (res.ok) setStats(await res.json());
+    } catch {}
+  }, []);
 
   useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data || data.error) return;
-        const formatNum = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}K+` : `${n}+`;
-        const total = data.total || 0;
-        const fatal = data.fatal || 0;
-        const serious = data.serious || 0;
-        const critical = data.critical || 0;
-        const minor = data.minor || 0;
-        const verifiedCount = data.verified || 0;
-        const junctionCount = data.junctionCount || 0;
-        const verifiedPercent = total > 0 ? Math.round((verifiedCount / total) * 100) : 0;
-        const fatalPercent = total > 0 ? Math.round((fatal / total) * 100) : 0;
-        const seriousPercent = total > 0 ? Math.round((serious / total) * 100) : 0;
-        const criticalPercent = total > 0 ? Math.round((critical / total) * 100) : 0;
-        const minorPercent = total > 0 ? Math.round((minor / total) * 100) : 0;
+    Promise.all([fetchAccidents(), fetchStats()]).finally(() => setLoading(false));
+  }, [fetchAccidents, fetchStats]);
 
-        // Build top5 from district data
-        const districtCount: Record<string, { count: number; fatal: number }> = {};
-        (data.rawAccidents || []).forEach((a: any) => {
-          const d = a.district || "Unknown";
-          if (!districtCount[d]) districtCount[d] = { count: 0, fatal: 0 };
-          districtCount[d].count++;
-          if (a.severity === "fatal") districtCount[d].fatal++;
-        });
-        const top5 = Object.entries(districtCount)
-          .map(([area, v]) => ({
-            area,
-            reports: v.count,
-            severity: v.fatal > 0 ? "fatal" : v.count > 5 ? "serious" : "minor",
-            color: v.fatal > 0 ? "#F87171" : v.count > 5 ? "#FBBF24" : "#3B82F6",
-          }))
-          .sort((a, b) => b.reports - a.reports)
-          .slice(0, 5);
+  const filteredAccidents = accidents.filter((a) => {
+    if (filters.district && a.district?.toLowerCase() !== filters.district.toLowerCase()) return false;
+    if (filters.severity && a.severity !== filters.severity) return false;
+    if (filters.weather && a.weather?.toLowerCase() !== filters.weather.toLowerCase()) return false;
+    if (filters.from && a.occurredAt < filters.from) return false;
+    if (filters.to && a.occurredAt > filters.to) return false;
+    return true;
+  });
 
-        setStats({
-          total, verifiedCount, junctionCount, verifiedPercent,
-          totalFatal: fatal, totalSerious: serious, totalCritical: critical, totalMinor: minor,
-          fatalPercent, seriousPercent, criticalPercent, minorPercent,
-          totalFatalities: data.totalFatalities || 0,
-          totalCasualties: data.totalCasualties || 0,
-          top5, formatNum,
-        });
-      })
-      .catch(() => {});
-  }, []);
+  const formatNum = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}K+` : `${n}`;
 
   return (
     <>
       <PremiumTopNav variant="default" />
 
-      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
         {/* Hero Section */}
         <ScrollReveal>
-          <section className="hero-section">
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <h1 style={{ margin: 0, fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, lineHeight: 1.05, color: "#fff" }}>
-                Road Safety{" "}
-                <span style={{ color: "#60A5FA" }}>Dar es Salaam</span>
+          <section className="home-hero">
+            <div className="home-hero-overlay" />
+            <div className="home-hero-content">
+              <div className="home-hero-badge">
+                <span className="home-hero-dot" />
+                <span>SDG 11.2 — {_("app.tagline")}</span>
+              </div>
+              <h1 className="home-hero-title">
+                {_("app.title")}
               </h1>
-              <p style={{ margin: "12px 0 0", fontSize: "clamp(16px, 2vw, 20px)", color: "#94A3B8", maxWidth: "56ch" }}>
-                Real-time accident hotspot intelligence for Tanzania's commercial capital. Crowdsourced reports and official police data, verified for every junction.
+              <p className="home-hero-sub">
+                Real-time accident hotspot intelligence for Tanzania&apos;s commercial capital.
+                Citizen-powered reports and official police data, verified and mapped for every district.
+                Working towards safer urban transport across all five municipalities.
               </p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "16px", position: "relative", flexShrink: 0 }}>
-              <span className="live-badge">
-                <span className="live-dot" />
-                LIVE DATA
-              </span>
-              <img src="/map-icon-2.png" alt="Map" style={{ width: 120, height: 120, objectFit: "contain", opacity: 0.8 }} />
+              <div className="home-hero-actions">
+                <Link href="/report" className="home-hero-btn-primary">
+                  Report an Accident
+                </Link>
+                <a href="#map-section" className="home-hero-btn-secondary">
+                  View Hotspot Map
+                </a>
+              </div>
+              <div className="home-hero-strip">
+                <div><strong>5</strong> Districts</div>
+                <div><strong>24/7</strong> Monitoring</div>
+                <div><strong>Police</strong> Verified</div>
+                <div><strong>Real-time</strong> Updates</div>
+              </div>
             </div>
           </section>
         </ScrollReveal>
 
-        {/* KPI Grid */}
+        {/* About Section */}
+        <ScrollReveal>
+          <section className="home-about">
+            <div className="home-about-text">
+              <span className="home-section-badge">About the System</span>
+              <h2>Road Safety Intelligence Platform</h2>
+              <p>
+                Dar es Salaam Road Safety is a comprehensive accident monitoring and analytics platform
+                serving the five districts of Tanzania&apos;s commercial capital. The system aggregates
+                crowdsourced reports from citizens alongside official Traffic Police and TANROADS data,
+                providing real-time hotspot intelligence for authorities and the public.
+              </p>
+              <p>
+                Every report is reviewed by traffic officers before appearing on the verified map,
+                ensuring data integrity. The platform supports evidence-based decision making for
+                road safety interventions, junction improvements, and targeted enforcement.
+              </p>
+              <div className="home-about-grid">
+                <div className="home-about-stat">
+                  <span className="home-about-stat-num">{stats ? formatNum(stats.total) : "0"}</span>
+                  <span className="home-about-stat-label">Total Reports</span>
+                </div>
+                <div className="home-about-stat">
+                  <span className="home-about-stat-num">{stats ? formatNum(stats.verified) : "0"}</span>
+                  <span className="home-about-stat-label">Verified</span>
+                </div>
+                <div className="home-about-stat">
+                  <span className="home-about-stat-num">{stats ? formatNum(stats.junctionCount) : "0"}</span>
+                  <span className="home-about-stat-label">Junctions Tracked</span>
+                </div>
+                <div className="home-about-stat">
+                  <span className="home-about-stat-num">5</span>
+                  <span className="home-about-stat-label">Districts</span>
+                </div>
+              </div>
+            </div>
+            <div className="home-about-visual">
+              <div className="home-about-card">
+                <div className="home-about-card-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10c0 4.5-3.5 8.5-8 9.5V12l-6-6"/><path d="M12 2a10 10 0 0 0-10 10c0 4.5 3.5 8.5 8 9.5V12l6-6"/></svg>
+                </div>
+                <h4>Community Powered</h4>
+                <p>Citizens report incidents via mobile or web. Anonymous by default.</p>
+              </div>
+              <div className="home-about-card">
+                <div className="home-about-card-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                </div>
+                <h4>Police Verified</h4>
+                <p>Traffic officers review and verify each report before it goes live.</p>
+              </div>
+              <div className="home-about-card">
+                <div className="home-about-card-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                </div>
+                <h4>Data Driven</h4>
+                <p>Advanced analytics identify high-risk zones and peak accident periods.</p>
+              </div>
+              <div className="home-about-card">
+                <div className="home-about-card-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </div>
+                <h4>Hotspot Mapping</h4>
+                <p>Interactive map with clustering, heatmap, and severity indicators.</p>
+              </div>
+            </div>
+          </section>
+        </ScrollReveal>
+
+        {/* KPI Stats */}
         {stats && (
           <ScrollReveal>
-            <div className="kpi-grid">
+            <div className="home-kpi-grid">
               {[
-                { num: stats.total, label: "Total Reports", color: "#F87171", border: "#F87171" },
-                { num: stats.verifiedCount, label: "Verified Reports", color: "#22C55E", border: "#22C55E" },
-                { num: stats.junctionCount, label: "Tracked Junctions", color: "#3B82F6", border: "#3B82F6" },
-                { num: stats.verifiedPercent, label: "Police Verified", color: "#FBBF24", border: "#FBBF24", suffix: "%" },
+                { label: "Total Reports", value: stats.total, color: "#3B82F6", desc: "Crowdsourced + official" },
+                { label: "Fatal Accidents", value: stats.fatal || 0, color: "#EF4444", desc: `${stats.totalFatalities || 0} lives lost` },
+                { label: "Serious Injuries", value: stats.totalCasualties || 0, color: "#F59E0B", desc: "Requiring hospital care" },
+                { label: "Verified Reports", value: stats.verified || 0, color: "#22C55E", desc: `${stats.total > 0 ? Math.round((stats.verified / stats.total) * 100) : 0}% of all reports` },
+                { label: "Tracked Junctions", value: stats.junctionCount || 0, color: "#8B5CF6", desc: "Across 5 districts" },
+                { label: "Minor Injuries", value: Math.max(0, (stats.totalCasualties || 0) - (stats.totalFatalities || 0)), color: "#14B8A6", desc: "Non-hospital treated" },
               ].map((kpi) => (
-                <div key={kpi.label} className="kpi-card" style={{ borderTop: `3px solid ${kpi.border}` }}>
-                  <CountUp end={kpi.num} suffix={(kpi as any).suffix || ""} className="kpi-value" style={{ color: kpi.color }} />
-                  <div className="kpi-label">{kpi.label}</div>
+                <div key={kpi.label} className="home-kpi-card">
+                  <div className="home-kpi-top" style={{ borderTopColor: kpi.color }} />
+                  <CountUp end={kpi.value} className="home-kpi-value" style={{ color: kpi.color }} />
+                  <div className="home-kpi-label">{kpi.label}</div>
+                  <div className="home-kpi-desc">{kpi.desc}</div>
                 </div>
               ))}
             </div>
           </ScrollReveal>
         )}
 
-        {/* Action Bar */}
+        {/* Map + Filters Section */}
         <ScrollReveal>
-          <div className="action-bar">
-            <Link href="/dashboard/" className="btn-secondary">View Hotspot Map</Link>
-            <Link href="/login" className="btn-ghost">Sign In</Link>
-            <span style={{ marginLeft: "auto", fontSize: 14, color: "#475569", fontWeight: 500 }}>
-              Citizen-powered · {stats ? stats.formatNum(stats.verifiedCount) : "0+"} verified reports
-            </span>
-          </div>
-        </ScrollReveal>
-
-        {/* Featured Stat Cards */}
-        {stats && (
-          <ScrollReveal>
-            <div className="featured-stat-grid">
-              {[
-                { label: "Total Reports", sublabel: "Crowdsourced + official", value: stats.total, icon: "/add-report.png", gradient: "linear-gradient(135deg, #DBEAFE, #FFFFFF)", color: "#3B82F6" },
-                { label: "Fatal Accidents", sublabel: `${stats.totalFatalities} lives lost`, value: stats.totalFatal, icon: "/stone-hazard.png", gradient: "linear-gradient(135deg, #FEE2E2, #FFFFFF)", color: "#F87171" },
-                { label: "Tracked Junctions", sublabel: "Across 5 districts", value: stats.junctionCount, icon: "/map-icon.png", gradient: "linear-gradient(135deg, #FEF3C7, #FFFFFF)", color: "#D97706" },
-                { label: "Police Verified", sublabel: `${stats.verifiedPercent}% of all reports`, value: stats.verifiedCount, icon: "/fingerprint-icon.png", gradient: "linear-gradient(135deg, #DCFCE7, #FFFFFF)", color: "#16A34A" },
-              ].map((card) => (
-                <div key={card.label} className="featured-stat-card" style={{ background: card.gradient }}>
-                  <img src={card.icon} alt="" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.7, marginBottom: 8 }} />
-                  <div className="featured-stat-card-body">
-                    <CountUp end={card.value} className="featured-stat-value" style={{ fontFamily: '"Hubot Sans","Nunito","Quicksand",system-ui,sans-serif', fontWeight: 800, fontSize: 40, letterSpacing: "-0.02em", color: "#0F172A" }} />
-                    <div className="featured-stat-label" style={{ color: card.color }}>{card.label}</div>
-                    <div className="featured-stat-sublabel">{card.sublabel}</div>
-                  </div>
-                </div>
-              ))}
+          <section id="map-section">
+            <div className="home-section-header">
+              <span className="home-section-badge">Interactive Map</span>
+              <h2>Accident Hotspot Map</h2>
+              <p>Explore verified accident reports across Dar es Salaam. Use filters to refine by date, district, severity, and more.</p>
             </div>
-          </ScrollReveal>
-        )}
-
-        {/* MID-PAGE CTA */}
-        <ScrollReveal>
-          <section className="report-cta-section">
-            <div className="report-cta-left">
-              <div className="report-cta-eyebrow">
-                <span className="report-cta-dot" />
-                <span>Live Citizen Reporting</span>
-              </div>
-              <h2 className="report-cta-title" style={{ color: "#FFFFFF" }}>
-                Saw an accident? <br />
-                <span style={{ color: "#F87171" }}>Report it in 60 seconds.</span>
-              </h2>
-              <p className="report-cta-sub">
-                Your report helps identify hotspots, save lives, and push authorities to fix dangerous junctions.
-                Anonymous by default. Takes less than a minute.
-              </p>
-              <div className="report-cta-actions">
-                <Link href="/report/" className="btn-report-primary">
-                  <span style={{ fontSize: 20, marginRight: 8 }}>＋</span> Report an Accident Now
-                </Link>
-                <Link href="/dashboard/" className="btn-report-secondary">
-                  See Live Hotspots
-                </Link>
-              </div>
-              <div className="report-cta-strip">
-                <div><strong>5 districts</strong> covered</div>
-                <div><strong>60 sec</strong> average form time</div>
-                <div><strong>Anonymous</strong> by default</div>
-              </div>
-            </div>
-            <div className="report-cta-right">
-              <div className="report-cta-hotspot-header">
-                <span className="live-dot" />
-                <span>Top 5 Active Hotspots</span>
-                <span style={{ marginLeft: "auto", fontSize: 11, color: "#94A3B8", textTransform: "uppercase", letterSpacing: 1 }}>Last 30 days</span>
-              </div>
-              <div className="report-cta-hotspot-list">
-                {stats && stats.top5.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 24, color: "#94A3B8", fontSize: 14 }}>
-                    No accident data yet. Be the first to <Link href="/report" style={{ color: "#3B82F6" }}>report</Link>.
-                  </div>
-                ) : stats?.top5.map((h, i) => (
-                  <div key={h.area} className="report-cta-hotspot-row">
-                    <div className="report-cta-hotspot-rank" style={{ background: h.color }}>{i + 1}</div>
-                    <div className="report-cta-hotspot-meta">
-                      <div className="report-cta-hotspot-name">{h.area}</div>
-                      <div className="report-cta-hotspot-stats">
-                        <span style={{ color: h.color, fontWeight: 700 }}>{h.severity === "fatal" || h.severity === "critical" ? "Critical" : h.severity === "serious" ? "High" : "Medium"}</span>
-                        <span style={{ color: "#94A3B8" }}>·</span>
-                        <span>{h.reports} reports</span>
-                      </div>
-                    </div>
-                    <Link href={`/dashboard/?area=${encodeURIComponent(h.area)}`} className="report-cta-hotspot-link">View →</Link>
-                  </div>
-                ))}
-              </div>
-              <Link href="/dashboard/" className="report-cta-hotspot-foot">
-                Open full hotspot intelligence map →
-              </Link>
-            </div>
+            <FilterBar filters={filters} onChange={setFilters} />
+            {loading ? (
+              <div style={{ height: 500, borderRadius: 16, background: "#E2E8F0", animation: "pulse 1.5s ease-in-out infinite" }} />
+            ) : (
+              <DashboardMap
+                accidents={filteredAccidents}
+                selectedHour="all"
+                seriousMode={false}
+              />
+            )}
           </section>
         </ScrollReveal>
 
-        {/* Charts Grid */}
-        {stats && (
-          <ScrollReveal>
-            <div className="charts-grid">
-              <div className="chart-card">
-                <h3>Severity Distribution</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {[
-                    { label: "Fatal", value: stats.fatalPercent, color: "#F87171" },
-                    { label: "Critical", value: stats.criticalPercent, color: "#FBBF24" },
-                    { label: "Serious", value: stats.seriousPercent, color: "#3B82F6" },
-                    { label: "Minor", value: stats.minorPercent, color: "#22C55E" },
-                  ].map((s) => (
-                    <div key={s.label}>
-                      <div className="severity-bar-header">
-                        <span>{s.label}</span>
-                        <span className="severity-bar-value">{s.value}%</span>
-                      </div>
-                      <div className="severity-bar-track">
-                        <div className="severity-bar-fill" style={{ width: `${s.value}%`, background: s.color }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* Analytics Section */}
+        <ScrollReveal>
+          <section>
+            <div className="home-section-header">
+              <span className="home-section-badge">Analytics</span>
+              <h2>Accident Statistics & Trends</h2>
+              <p>Comprehensive data visualizations powered by verified police reports and citizen submissions.</p>
+            </div>
+            <AnalyticsDashboard
+              filters={{
+                from: filters.from || undefined,
+                to: filters.to || undefined,
+                district: filters.district || undefined,
+                severity: filters.severity || undefined,
+                weather: filters.weather || undefined,
+                roadType: filters.roadType || undefined,
+              }}
+            />
+          </section>
+        </ScrollReveal>
 
-              <div className="chart-card">
-                <h3>Key Features</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {[
-                    { icon: "", text: "Crowdsourced accident reports from citizens across all 5 districts" },
-                    { icon: "", text: "Recommendations for high-risk junctions" },
-                    { icon: "", text: "Police verification workflow for data integrity" },
-                    { icon: "", text: "Statistics dashboard and PDF + Excel data export" },
-                  ].map((f) => (
-                    <div key={f.text} className="feature-item">
-                      <span className="feature-text">{f.text}</span>
-                    </div>
-                  ))}
+        {/* Road Safety Awareness Section */}
+        <ScrollReveal>
+          <section className="home-awareness">
+            <div className="home-awareness-header">
+              <span className="home-section-badge">Awareness</span>
+              <h2>Road Safety Tips</h2>
+              <p>Simple actions that save lives on Dar es Salaam&apos;s roads.</p>
+            </div>
+            <div className="home-awareness-grid">
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #22C55E" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </div>
+                <h4>Stay Alert</h4>
+                <p>Always be aware of your surroundings. Avoid using mobile phones while crossing roads or driving.</p>
               </div>
-
-              <div className="chart-card wide">
-                <h3>Coverage Area — Dar es Salaam</h3>
-                <div className="district-grid">
-                  {[
-                    { district: "Ilala", wards: 17 },
-                    { district: "Kinondoni", wards: 20 },
-                    { district: "Temeke", wards: 24 },
-                    { district: "Ubungo", wards: 14 },
-                    { district: "Kigamboni", wards: 8 },
-                  ].map((d) => (
-                    <div key={d.district} className="district-card">
-                      <div className="district-name">{d.district}</div>
-                      <div className="district-wards">{d.wards} wards</div>
-                    </div>
-                  ))}
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #3B82F6" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h4M14 10h4M6 14h2M14 14h4"/></svg>
                 </div>
+                <h4>Use Designated Crossings</h4>
+                <p>Always use pedestrian crossings, footbridges, and designated bus stops. Never jaywalk on major roads.</p>
+              </div>
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #F59E0B" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                </div>
+                <h4>Helmet & Seatbelt</h4>
+                <p>Bodaboda and motorcycle riders must wear helmets. All vehicle occupants must wear seatbelts at all times.</p>
+              </div>
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #EF4444" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h4>Follow Speed Limits</h4>
+                <p>Speed is the leading cause of fatal accidents. Observe posted limits and reduce speed in built-up areas and near schools.</p>
+              </div>
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #8B5CF6" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h4>Report Dangerous Junctions</h4>
+                <p>Use our platform to report hazardous junctions, potholes, missing signage, and poor lighting near roads.</p>
+              </div>
+              <div className="home-awareness-card" style={{ borderTop: "3px solid #14B8A6" }}>
+                <div className="home-awareness-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+                </div>
+                <h4>Never Drink & Drive</h4>
+                <p>Alcohol impairs judgment and reaction time. Use designated drivers or public transport if you have been drinking.</p>
               </div>
             </div>
-          </ScrollReveal>
-        )}
+          </section>
+        </ScrollReveal>
       </main>
 
-      <footer className="site-footer">
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <img src="/accident-protection.png" alt="" style={{ width: 24, height: 24, objectFit: "contain", opacity: 0.6 }} />
-            <span style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>Dar es Salaam Road Safety</span>
-          </div>
-          <p style={{ margin: 0, color: "#64748B", fontSize: 14, lineHeight: 1.6, textAlign: "center" }}>
-            &copy; {new Date().getFullYear()} <strong>Dar es Salaam Road Safety</strong> — All Rights Reserved.
-            <br />
-            Built with passion for safer roads. Contact:{" "}
-            <a href="mailto:roadsafetydar@gmail.com" style={{ color: "#3B82F6", textDecoration: "none", fontWeight: 600 }}>
-              roadsafetydar@gmail.com
-            </a>
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px 20px", marginTop: 4 }}>
-            {["Ilala", "Kinondoni", "Temeke", "Ubungo", "Kigamboni"].map((d) => (
-              <Link key={d} href={`/dashboard?district=${d.toLowerCase()}`} style={{ color: "#64748B", textDecoration: "none", fontSize: 13, fontWeight: 500 }}>
-                {d}
-              </Link>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: "#94A3B8", letterSpacing: "0.5px", marginTop: 8 }}>
-            SDG 11.2 — Safer urban transport in Dar es Salaam · Tanzania
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .home-hero {
+          position: relative; border-radius: 28px; overflow: hidden; margin-bottom: 48px;
+          background: linear-gradient(135deg, #0B1A33 0%, #1A365D 50%, #1E3A5F 100%);
+          min-height: 380px; display: flex; align-items: center;
         }
-        .hero-section {
-          display: flex; align-items: flex-start; justify-content: space-between; gap: 48px;
-          margin-bottom: 48px; padding: 48px;
-          background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-          border-radius: 28px; color: #fff; position: relative; overflow: hidden;
+        .home-hero-overlay {
+          position: absolute; inset: 0; opacity: 0.06;
+          background-image: radial-gradient(circle at 25% 50%, #3B82F6 0%, transparent 60%),
+            radial-gradient(circle at 75% 30%, #60A5FA 0%, transparent 50%);
         }
-        .live-badge {
+        .home-hero-content { position: relative; z-index: 1; padding: 56px 48px; width: 100%; }
+        .home-hero-badge {
           display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(34, 197, 94, 0.15); color: #22C55E;
-          padding: 8px 16px; border-radius: 999px; font-size: 16px; font-weight: 600;
+          background: rgba(59, 130, 246, 0.15); color: #93C5FD;
+          padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
           letter-spacing: 0.04em; text-transform: uppercase;
-          border: 1px solid rgba(34, 197, 94, 0.3); backdrop-filter: blur(4px);
+          border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 20px;
         }
-        .live-dot {
-          width: 8px; height: 8px; border-radius: 50%; background: #22C55E;
-          animation: pulse 1.5s ease-in-out infinite;
+        .home-hero-dot { width: 6px; height: 6px; border-radius: 50%; background: #60A5FA; }
+        .home-hero-title {
+          margin: 0; font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.08;
+          color: #FFFFFF; letter-spacing: -0.02em; max-width: 700px;
         }
-        .kpi-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .home-hero-sub {
+          margin: 16px 0 0; font-size: clamp(15px, 1.5vw, 18px); color: #94A3B8;
+          max-width: 600px; line-height: 1.6;
+        }
+        .home-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0; }
+        .home-hero-btn-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+          color: #fff; text-decoration: none; font-size: 15px; font-weight: 700;
+          padding: 14px 32px; border-radius: 12px;
+          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+          transition: all 0.2s ease;
+        }
+        .home-hero-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5); }
+        .home-hero-btn-secondary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: rgba(255,255,255,0.08); color: #E2E8F0; text-decoration: none;
+          border: 1px solid rgba(255,255,255,0.2); font-size: 15px; font-weight: 600;
+          padding: 14px 28px; border-radius: 12px; backdrop-filter: blur(8px);
+          transition: all 0.2s ease;
+        }
+        .home-hero-btn-secondary:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+        .home-hero-strip {
+          display: flex; flex-wrap: wrap; gap: 24px; padding-top: 24px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          font-size: 13px; color: #94A3B8;
+        }
+        .home-hero-strip strong { color: #fff; font-weight: 700; }
+
+        .home-section-badge {
+          display: inline-block; background: #DBEAFE; color: #1D4ED8;
+          padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+        }
+        .home-section-header { text-align: center; margin-bottom: 32px; }
+        .home-section-header h2 {
+          margin: 0 0 8px; font-size: clamp(24px, 3vw, 32px); font-weight: 700; color: #0F172A;
+        }
+        .home-section-header p {
+          margin: 0; font-size: 15px; color: #64748B; max-width: 600px; margin-inline: auto;
+        }
+
+        .home-about {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 48px;
+          padding: 48px; background: #fff; border-radius: 20px;
+          border: 1px solid #E2E8F0;
+        }
+        .home-about-text h2 { margin: 0 0 16px; font-size: clamp(22px, 3vw, 30px); }
+        .home-about-text p { font-size: 15px; color: #475569; line-height: 1.7; margin: 0 0 12px; }
+        .home-about-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
+        .home-about-stat {
+          padding: 16px; background: #F8FAFC; border-radius: 12px; text-align: center;
+          border: 1px solid #E2E8F0;
+        }
+        .home-about-stat-num {
+          display: block; font-family: "Hubot Sans","Nunito",system-ui,sans-serif;
+          font-size: 28px; font-weight: 800; color: #3B82F6;
+        }
+        .home-about-stat-label { font-size: 12px; color: #64748B; font-weight: 600; }
+        .home-about-visual { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .home-about-card {
+          padding: 24px 20px; background: #F8FAFC; border-radius: 16px;
+          border: 1px solid #E2E8F0; text-align: center;
+        }
+        .home-about-card-icon {
+          width: 56px; height: 56px; border-radius: 14px; background: #EFF6FF;
+          display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
+        }
+        .home-about-card h4 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #0F172A; }
+        .home-about-card p { margin: 0; font-size: 13px; color: #64748B; line-height: 1.5; }
+
+        .home-kpi-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 16px; margin-bottom: 48px;
         }
-        .kpi-card {
-          background: #fff; padding: 24px; border-radius: 20px;
-          border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-          text-align: center;
+        .home-kpi-card {
+          background: #fff; border-radius: 16px; overflow: hidden;
+          border: 1px solid #E2E8F0; padding: 24px 16px; text-align: center;
           transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s;
         }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
-        .kpi-value {
+        .home-kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,23,42,0.08); }
+        .home-kpi-top { height: 3px; margin: -24px -16px 20px; }
+        .home-kpi-value {
           font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif;
-          font-size: 40px; font-weight: 800; line-height: 1;
+          font-size: 36px; font-weight: 800; line-height: 1;
         }
-        .kpi-label { font-size: 16px; color: #475569; margin-top: 8px; font-weight: 600; }
-        .action-bar {
-          display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-          margin-bottom: 48px; padding: 24px 32px;
-          background: #fff; border-radius: 20px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
-        }
-        .btn-primary, .btn-secondary, .btn-ghost {
-          display: inline-flex; align-items: center; gap: 8px;
-          text-decoration: none; font-family: "Atkinson Hyperlegible","Nunito Sans","Inter",system-ui,sans-serif;
-          font-size: 12px; text-transform: uppercase; letter-spacing: 2.5px;
-          font-weight: 600; min-height: 56px; padding: 1.3em 3em;
-          border-radius: 45px; cursor: pointer; line-height: 1;
-          box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s ease 0s;
-        }
-        .btn-secondary { background: #fff; color: #000; }
-        .btn-secondary:hover { background-color: #3B82F6; box-shadow: 0px 15px 20px rgba(59, 130, 246, 0.4); color: #fff; transform: translateY(-7px); }
-        .btn-ghost { background: transparent; box-shadow: none; color: #000; }
-        .btn-ghost:hover { background: #f1f5f9; box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.08); transform: translateY(-3px); }
+        .home-kpi-label { font-size: 15px; color: #0F172A; margin-top: 8px; font-weight: 700; }
+        .home-kpi-desc { font-size: 12px; color: #94A3B8; margin-top: 4px; }
 
-        .featured-stat-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 24px; margin: 48px 0;
+        .home-awareness { margin: 48px 0; }
+        .home-awareness-header { text-align: center; margin-bottom: 32px; }
+        .home-awareness-header h2 { margin: 0 0 8px; }
+        .home-awareness-header p { margin: 0; color: #64748B; font-size: 15px; }
+        .home-awareness-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
         }
-        .featured-stat-card {
-          position: relative; width: 100%; max-width: 320px; height: 260px;
-          border-radius: 20px; overflow: hidden; isolation: isolate;
-          transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s;
-          border: 1px solid #E2E8F0;
+        .home-awareness-card {
+          background: #fff; border-radius: 16px; padding: 28px 24px;
+          border: 1px solid #E2E8F0; transition: transform 0.24s, box-shadow 0.24s;
         }
-        .featured-stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
-        .featured-stat-card-body {
-          z-index: 1; position: relative; width: 100%; height: 100%;
-          border-radius: 19px; background: rgba(255,255,255,0.88);
-          backdrop-filter: blur(4px); display: flex; flex-direction: column;
-          align-items: center; justify-content: center; padding: 24px 16px;
-          text-align: center; gap: 4px;
-        }
-        .featured-stat-label {
-          font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif;
-          font-size: 19px; font-weight: 600; margin-top: 8px;
-        }
-        .featured-stat-sublabel { font-size: 14px; color: #475569; margin-top: 4px; }
-        .charts-grid {
-          display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 48px;
-        }
-        .chart-card {
-          background: #fff; padding: 24px; border-radius: 20px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
-        }
-        .chart-card h3 {
-          margin: 0 0 16px; font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif;
-          font-size: 19px; color: #0F172A; font-weight: 600;
-        }
-        .chart-card.wide { grid-column: span 2; }
-        .severity-bar-header { display: flex; justify-content: space-between; font-size: 14px; color: #475569; margin-bottom: 4px; }
-        .severity-bar-value { font-weight: 700; color: #0F172A; }
-        .severity-bar-track { height: 8px; background: #E2E8F0; border-radius: 999px; overflow: hidden; }
-        .severity-bar-fill { height: 100%; border-radius: 999px; transition: width 300ms ease; }
-        .feature-item { display: flex; gap: 12px; align-items: center; }
-        .feature-text { font-size: 14px; color: #475569; line-height: 1.5; }
-        .district-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
-        .district-card { padding: 16px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; text-align: center; }
-        .district-name { font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif; font-weight: 700; font-size: 16px; color: #0F172A; }
-        .district-wards { font-size: 12px; color: #475569; margin-top: 4px; }
-
-        .report-cta-section {
-          display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px;
-          margin: 56px 0; padding: 0;
-        }
-        .report-cta-left {
-          background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-          color: #fff; border-radius: 24px; padding: 40px;
-          position: relative; overflow: hidden;
-          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
-        }
-        .report-cta-left::before {
-          content: ""; position: absolute; top: -80px; right: -80px;
-          width: 280px; height: 280px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(248, 113, 113, 0.25) 0%, transparent 70%);
-        }
-        .report-cta-eyebrow {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(34, 197, 94, 0.12); color: #22C55E;
-          padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
-          letter-spacing: 0.05em; text-transform: uppercase;
-          border: 1px solid rgba(34, 197, 94, 0.3);
-          margin-bottom: 20px; position: relative; z-index: 1;
-        }
-        .report-cta-dot {
-          width: 8px; height: 8px; border-radius: 50%; background: #22C55E;
-          animation: pulse 1.5s ease-in-out infinite;
-        }
-        .report-cta-title {
-          font-family: "Hubot Sans","Nunito","Quicksand",system-ui,sans-serif;
-          font-size: 36px; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em;
-          margin: 0 0 16px; position: relative; z-index: 1;
-        }
-        .report-cta-sub {
-          font-size: 16px; line-height: 1.6; color: #CBD5E1; margin: 0 0 28px;
-          max-width: 480px; position: relative; z-index: 1;
-        }
-        .report-cta-actions {
-          display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px;
-          position: relative; z-index: 1;
-        }
-        .btn-report-primary {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
-          color: #fff; text-decoration: none;
-          font-family: "Atkinson Hyperlegible","Inter",system-ui,sans-serif;
-          font-size: 15px; font-weight: 700;
-          padding: 16px 32px; border-radius: 14px;
-          letter-spacing: 0.01em;
-          box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35);
-          transition: all 0.2s ease;
-        }
-        .btn-report-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(220, 38, 38, 0.5); }
-        .btn-report-secondary {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: rgba(255, 255, 255, 0.1); color: #fff; text-decoration: none;
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          font-size: 15px; font-weight: 600;
-          padding: 16px 28px; border-radius: 14px;
-          backdrop-filter: blur(8px);
-          transition: all 0.2s ease;
-        }
-        .btn-report-secondary:hover { background: rgba(255, 255, 255, 0.18); transform: translateY(-1px); }
-        .report-cta-strip {
-          display: flex; flex-wrap: wrap; gap: 24px; padding-top: 24px;
-          border-top: 1px solid rgba(255, 255, 255, 0.12);
-          font-size: 13px; color: #94A3B8; position: relative; z-index: 1;
-        }
-        .report-cta-strip strong { color: #fff; font-weight: 700; }
-        .report-cta-right {
-          background: #fff; border-radius: 24px; padding: 32px;
-          border: 1px solid #E2E8F0;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
-          display: flex; flex-direction: column;
-        }
-        .report-cta-hotspot-header {
-          display: flex; align-items: center; gap: 8px;
-          font-family: "Hubot Sans","Nunito",system-ui,sans-serif;
-          font-size: 14px; font-weight: 700; color: #0F172A;
-          text-transform: uppercase; letter-spacing: 0.05em;
-          margin-bottom: 20px;
-        }
-        .report-cta-hotspot-list { display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .report-cta-hotspot-row {
-          display: flex; align-items: center; gap: 14px;
-          padding: 12px 14px; border-radius: 14px;
-          background: #F8FAFC; border: 1px solid #E2E8F0;
-          transition: all 0.2s ease;
-        }
-        .report-cta-hotspot-row:hover { background: #F1F5F9; transform: translateX(2px); }
-        .report-cta-hotspot-rank {
-          width: 32px; height: 32px; border-radius: 10px;
-          display: flex; align-items: center; justify-content: center;
-          color: #fff; font-weight: 800; font-size: 14px; flex-shrink: 0;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-        }
-        .report-cta-hotspot-meta { flex: 1; min-width: 0; }
-        .report-cta-hotspot-name {
-          font-weight: 700; font-size: 14px; color: #0F172A;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .report-cta-hotspot-stats { display: flex; gap: 6px; align-items: center; font-size: 12px; margin-top: 2px; }
-        .report-cta-hotspot-link { color: #3B82F6; text-decoration: none; font-size: 12px; font-weight: 700; white-space: nowrap; }
-        .report-cta-hotspot-foot {
-          display: block; text-align: center; margin-top: 18px; padding: 12px;
-          background: #F1F5F9; border-radius: 12px; color: #1E293B;
-          text-decoration: none; font-weight: 700; font-size: 13px;
-          transition: background 0.2s;
-        }
-        .report-cta-hotspot-foot:hover { background: #E2E8F0; }
-        .site-footer {
-          text-align: center; padding: 48px 24px; background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
-          border-top: 1px solid #E2E8F0;
-        }
+        .home-awareness-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,23,42,0.08); }
+        .home-awareness-icon { margin-bottom: 16px; }
+        .home-awareness-card h4 { margin: 0 0 8px; font-size: 17px; font-weight: 700; color: #0F172A; }
+        .home-awareness-card p { margin: 0; font-size: 14px; color: #475569; line-height: 1.6; }
 
         @media (max-width: 768px) {
-          .hero-section { flex-direction: column; padding: 32px 24px; gap: 24px; }
-          .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
-          .kpi-value { font-size: 28px !important; }
-          .kpi-card { padding: 18px; }
-          .action-bar { flex-direction: column; align-items: stretch; padding: 16px 20px; }
-          .action-bar .btn-secondary, .action-bar .btn-ghost { justify-content: center; min-height: 48px; padding: 0.8em 1.5em; font-size: 11px; width: 100%; }
-          .action-bar span { margin-left: 0 !important; text-align: center; }
-          .charts-grid { grid-template-columns: 1fr !important; }
-          .chart-card.wide { grid-column: span 1 !important; }
-          .featured-stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
-          .featured-stat-card { max-width: 100%; height: 200px; }
-          .featured-stat-card img { width: 32px !important; height: 32px !important; }
-          .featured-stat-value { font-size: 28px !important; }
-          .featured-stat-label { font-size: 15px !important; }
-          .featured-stat-sublabel { font-size: 12px !important; }
-          .district-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .report-cta-section { grid-template-columns: 1fr !important; margin: 36px 0; }
-          .report-cta-left { padding: 28px 24px; }
-          .report-cta-title { font-size: 28px !important; }
-          .report-cta-right { padding: 24px; }
-          .hero-section img { width: 80px !important; height: 80px !important; }
+          .home-hero-content { padding: 32px 24px; }
+          .home-hero-title { font-size: 28px; }
+          .home-about { grid-template-columns: 1fr; padding: 24px; }
+          .home-about-visual { grid-template-columns: repeat(2, 1fr); }
+          .home-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          .home-kpi-value { font-size: 28px; }
+          .home-awareness-grid { grid-template-columns: 1fr; }
+          .home-about-stat-num { font-size: 22px; }
         }
         @media (max-width: 480px) {
-          .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
-          .kpi-card { padding: 12px; }
-          .kpi-value { font-size: 22px !important; }
-          .kpi-label { font-size: 13px !important; }
-          .featured-stat-grid { grid-template-columns: 1fr !important; }
-          .featured-stat-card { height: 180px; }
-          .hero-section { padding: 24px 16px !important; }
-          .action-bar { padding: 12px 16px !important; }
-          .report-cta-left { padding: 24px 16px !important; }
-          .report-cta-actions { flex-direction: column; }
-          .report-cta-actions a { width: 100%; justify-content: center; }
-          .report-cta-strip { flex-direction: column; gap: 8px; }
-          .report-cta-title { font-size: 22px !important; }
-          .report-cta-sub { font-size: 14px !important; }
-          .district-grid { grid-template-columns: 1fr !important; }
-          .site-footer { padding: 32px 16px !important; }
-          .live-badge { font-size: 12px !important; padding: 6px 12px !important; }
+          .home-hero-content { padding: 24px 16px; }
+          .home-hero-actions { flex-direction: column; }
+          .home-hero-actions a { width: 100%; justify-content: center; text-align: center; }
+          .home-hero-strip { flex-direction: column; gap: 8px; }
+          .home-about-visual { grid-template-columns: 1fr; }
+          .home-kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+          .home-kpi-card { padding: 16px 12px; }
+          .home-kpi-value { font-size: 24px; }
+          .home-about { padding: 16px; }
+          .home-about-grid { grid-template-columns: 1fr 1fr; }
+          .home-section-header { text-align: left; }
         }
       `}</style>
     </>
