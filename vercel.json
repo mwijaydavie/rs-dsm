@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm install --prefix landing",
+  "buildCommand": "npm run build --prefix landing",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
+}
