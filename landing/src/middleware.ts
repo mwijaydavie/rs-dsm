@@ -104,15 +104,16 @@ async function getUserRoleFromSession(request: NextRequest): Promise<string | nu
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  const commonProtected = ["/dashboard", "/profile"];
-  const isCommonProtected = commonProtected.some((p) => path.startsWith(p));
+  // PUBLIC PAGES - no login required
+  const publicPages = ["/", "/dashboard", "/report", "/public-dashboard", "/login", "/register", "/privacy", "/terms"];
+  const isPublicPage = publicPages.some((p) => path === p || path.startsWith(p + "/"));
+
+  if (isPublicPage) {
+    return NextResponse.next({ request });
+  }
 
   const guard = ROUTE_GUARDS.find((g) => path.startsWith(g.path));
   const isGuest = request.cookies.get("rsd_guest")?.value === "1";
-
-  if (isCommonProtected && isGuest) {
-    return NextResponse.next({ request });
-  }
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.next({ request });
@@ -134,7 +135,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  if ((isCommonProtected || guard) && !user) {
+  if (guard && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
