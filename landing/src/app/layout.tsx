@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import LoadingScreenWrapper from "@/components/LoadingScreenWrapper";
 
 export const metadata: Metadata = {
   title: "Road Safety Dar es Salaam — Real-time Accident Intelligence",
@@ -10,10 +9,6 @@ export const metadata: Metadata = {
     apple: "/icon-192x192.png",
   },
 };
-
-// Force dynamic rendering to avoid static generation issues with
-// client components using usePathname() (LoadingScreenWrapper)
-export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,
@@ -31,7 +26,6 @@ export default function RootLayout({
         <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer />
       </head>
       <body>
-        <LoadingScreenWrapper />
         {children}
       </body>
     </html>
