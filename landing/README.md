@@ -1314,4 +1314,5 @@ npx tsx prisma/seed.ts
 > Built with ❤️ for Dar es Salaam, Tanzania.  
 > Contact: [roadsafetydar@gmail.com](mailto:roadsafetydar@gmail.com)
 .  
+  
  
