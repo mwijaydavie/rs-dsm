@@ -32,7 +32,7 @@ const VEHICLES = [
   "bus",
   "truck",
   "bicycle",
-  "pedestrian",
+  "auto_rickshaw",
 ];
 const STATUSES: { value: ExportStatus; label: string }[] = [
   { value: "all", label: "All" },
