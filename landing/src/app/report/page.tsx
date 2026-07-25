@@ -89,14 +89,54 @@ export default function ReportPage() {
     );
   }, []);
 
+  const [locationName, setLocationName] = useState("");
+
+  async function reverseGeocode(lat: number, lng: number) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=sw`
+      );
+      const data = await res.json();
+      const addr = data.address || {};
+      const road = addr.road || addr.street || "";
+      const neighbourhood = addr.neighbourhood || addr.suburb || "";
+      const ward = addr.quarter || addr.ward || "";
+      const district = addr.city_district || addr.state_district || "";
+      const city = addr.city || addr.town || "";
+      const parts = [road, neighbourhood, ward, district || city].filter(Boolean);
+      return parts.join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    } catch {
+      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+  }
+
   const getLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { alert("GPS haitumiki kwenye kifaa chako."); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const lat = pos.coords.latitude; const lng = pos.coords.longitude;
         setForm((f) => ({ ...f, lat, lng }));
+        // Reverse geocode to get detailed address
+        const name = await reverseGeocode(lat, lng);
+        setLocationName(name);
+        // Auto-fill district from GPS
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=sw`
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const detectedDistrict = addr.city_district || addr.state_district || addr.city || "";
+          if (detectedDistrict) {
+            // Try to match with our districts list
+            const match = districts.find(
+              (d) => detectedDistrict.toLowerCase().includes(d.toLowerCase()) || d.toLowerCase().includes(detectedDistrict.toLowerCase())
+            );
+            if (match) setSelectedDistrict(match);
+          }
+        } catch {}
       },
-      () => alert("Could not get location. Enable GPS on your device.")
+      () => alert("GPS haipatikani. Washa GPS kwenye kifaa chako.")
     );
   };
 
@@ -190,6 +230,16 @@ export default function ReportPage() {
               <button type="button" onClick={getLocation} className="rsd-location-btn" style={{ marginTop: 10, background: "none", border: "1px solid #E2E8F0", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontSize: 14, minHeight: 44 }}>
                 📍 Use my current location
               </button>
+              {locationName && (
+                <div style={{ marginTop: 8, padding: "8px 12px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, fontSize: 13, color: "#166534", fontWeight: 500 }}>
+                  📍 Uko: {locationName}
+                </div>
+              )}
+              {form.lat !== 0 && (
+                <div style={{ marginTop: 4, fontSize: 11, color: "#94A3B8" }}>
+                  GPS: {form.lat.toFixed(6)}, {form.lng.toFixed(6)}
+                </div>
+              )}
             </div>
 
             {/* Incident Details */}
@@ -208,12 +258,12 @@ export default function ReportPage() {
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={labelStyle}>Vehicle Type</span>
                   <select value={form.vehicleType} onChange={(e) => setForm((f) => ({ ...f, vehicleType: e.target.value }))} required style={inputStyle}>
-                    <option value="motorcycle">Motorcycle / Bodaboda</option>
-                    <option value="car">Car</option>
-                    <option value="bus">Bus / Daladala</option>
-                    <option value="truck">Truck / Lorry</option>
-                    <option value="bicycle">Bicycle</option>
-                    <option value="pedestrian">Pedestrian</option>
+                    <option value="motorcycle">Pikipiki (Motorcycle / Bodaboda)</option>
+                    <option value="car">Gari Ndogo (Car)</option>
+                    <option value="bus">Basi / Daladala (Bus / Minibus)</option>
+                    <option value="truck">Lori (Truck / Lorry)</option>
+                    <option value="bicycle">Baiskeli (Bicycle)</option>
+                    <option value="auto_rickshaw">Bajaji (Tricycle)</option>
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -275,10 +325,10 @@ export default function ReportPage() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {([
-                    { key: "sad", emoji: "😔", label: "Sad", color: "#3B82F6" },
-                    { key: "tragic", emoji: "💔", label: "Tragic", color: "#DC2626" },
-                    { key: "hopeful", emoji: "🤝", label: "Hopeful", color: "#22C55E" },
-                    { key: "miraculous", emoji: "✨", label: "Miraculous", color: "#A855F7" },
+                    { key: "sad", label: "Sad", color: "#3B82F6" },
+                    { key: "tragic", label: "Tragic", color: "#DC2626" },
+                    { key: "hopeful", label: "Hopeful", color: "#22C55E" },
+                    { key: "miraculous", label: "Miraculous", color: "#A855F7" },
                   ] as const).map((m) => {
                     const active = form.mood === m.key;
                     return (
@@ -292,7 +342,6 @@ export default function ReportPage() {
                           color: active ? m.color : "#475569",
                           fontSize: 13, fontWeight: 600, cursor: "pointer",
                         }}>
-                        <span style={{ fontSize: 16 }}>{m.emoji}</span>
                         {m.label}
                       </button>
                     );
