@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Force dynamic rendering to avoid static generation issues with
+// client components using usePathname() (LoadingScreenWrapper)
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
