@@ -1313,3 +1313,5 @@ npx tsx prisma/seed.ts
 > 🚦 **Every report saves a life. Every hotspot identified prevents the next crash.**  
 > Built with ❤️ for Dar es Salaam, Tanzania.  
 > Contact: [roadsafetydar@gmail.com](mailto:roadsafetydar@gmail.com)
+.  
+ 
