@@ -40,14 +40,13 @@ SEVERITY_WEIGHT = {
 }
 
 VEHICLE_CHOICES = [
-    ("motorcycle", "Motorcycle / Bodaboda"),
-    ("car", "Car"),
-    ("bus", "Bus / Daladala"),
-    ("truck", "Truck / Lorry"),
-    ("bicycle", "Bicycle"),
-    ("pedestrian", "Pedestrian only"),
-    ("auto_rickshaw", "Auto-rickshaw / Bajaji"),
-    ("mixed", "Mixed / Multiple"),
+    ("motorcycle", "Pikipiki (Motorcycle / Bodaboda)"),
+    ("car", "Gari Ndogo (Car)"),
+    ("bus", "Basi / Daladala (Bus / Minibus)"),
+    ("truck", "Lori (Truck / Lorry)"),
+    ("bicycle", "Baiskeli (Bicycle)"),
+    ("auto_rickshaw", "Bajaji (Tricycle)"),
+    ("mixed", "Mchanganyiko (Mixed / Multiple)"),
 ]
 
 REPORTER_CHOICES = [
