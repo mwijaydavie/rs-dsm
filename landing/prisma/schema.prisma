@@ -100,6 +100,10 @@ model UserProfile {
   emailNotifications Boolean @default(true)
   supabaseUid       String?  @unique
   avatarUrl         String?
+  badgeNumber       String   @default("")
+  station           String   @default("")
+  employeeId        String   @default("")
+  institution       String   @default("")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

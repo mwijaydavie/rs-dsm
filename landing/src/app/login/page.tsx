@@ -1,14 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PremiumTopNav from "@/components/PremiumTopNav";
 import { createClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // If user is already logged in, bounce them straight to dashboard
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (data.session) {
+          router.replace("/dashboard");
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const supabase = createClient();
 
@@ -19,7 +38,6 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // Keep redirect in Next so middleware will protect /dashboard
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -27,11 +45,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-      return;
     }
-
-    // Success: Supabase will redirect to /auth/callback.
-    // Do NOT force navigation here; middleware will handle redirecting to protected pages.
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -39,127 +53,273 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
 
     if (err) {
       setError(err.message);
-    } else {
-      window.location.href = "/dashboard";
-      localStorage.setItem("rsd_user", JSON.stringify({ email }));
+      setLoading(false);
       return;
     }
+
+    // Fetch user profile from our backend for role/flags
+    let profileData: any = {
+      email,
+      firstName: email.split("@")[0],
+      avatar: undefined,
+      isStaff: false,
+      isSuperuser: false,
+      role: "community",
+    };
+    try {
+      const r = await fetch("/api/me");
+      if (r.ok) {
+        const j = await r.json();
+        if (j?.user) profileData = { ...profileData, ...j.user };
+      }
+    } catch {}
+
+    localStorage.setItem("rsd_user", JSON.stringify(profileData));
+    window.dispatchEvent(new Event("rsd:user-changed"));
     setLoading(false);
+    router.push("/dashboard");
+    router.refresh();
+  };
+
+  const handleContinueAsGuest = () => {
+    const guestUser = {
+      email: `guest-${Math.random().toString(36).slice(2, 8)}@roadsafety.local`,
+      firstName: "Guest",
+      lastName: "User",
+      role: "guest",
+      isStaff: false,
+      isSuperuser: false,
+      isGuest: true,
+    };
+    localStorage.setItem("rsd_user", JSON.stringify(guestUser));
+    // Also set a cookie so middleware lets us through
+    document.cookie = `rsd_guest=1; path=/; max-age=86400; SameSite=Lax`;
+    window.dispatchEvent(new Event("rsd:user-changed"));
+    router.push("/dashboard");
+    router.refresh();
   };
 
   return (
     <div style={{ minHeight: "100vh", background: "#F8FAFC", display: "flex", flexDirection: "column" }}>
-      <header
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 19 }}>
-          <img src="/accident-protection.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-          Road Safety Dar es Salaam
-        </div>
-        <nav style={{ display: "flex", gap: 16 }}>
-          <Link href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>Dashboard</Link>
-        </nav>
-      </header>
+      <PremiumTopNav variant="login" />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 80 }}>
-        <div style={{ background: "#fff", padding: 48, borderRadius: 28, maxWidth: 420, width: "100%", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <img src="/sign-in.png" alt="Sign in" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 12 }} />
-            <h2 style={{ margin: "0 0 4px" }}>Welcome Back</h2>
-            <p style={{ color: "#475569", margin: 0, fontSize: 14 }}>Sign in to Road Safety Dar es Salaam</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 12px 16px", flex: 1 }}>
+        <div
+          style={{
+            background: "#fff",
+            padding: "clamp(20px, 4vw, 40px)",
+            borderRadius: 20,
+            maxWidth: 440,
+            width: "100%",
+            boxShadow: "0 4px 20px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)",
+            border: "1px solid rgba(15, 23, 42, 0.04)",
+          }}
+        >
+          {/* Toggle between Sign In and Register */}
+          <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 999, padding: 4, marginBottom: 24 }}>
+            <div style={{
+              flex: 1, padding: "10px 16px", borderRadius: 999,
+              background: "#fff", color: "#0F172A", fontSize: 14, fontWeight: 700,
+              textAlign: "center", boxShadow: "0 1px 3px rgba(15, 23, 42, 0.08)",
+            }}>
+              Sign In
+            </div>
+            <Link href="/register" style={{
+              flex: 1, padding: "10px 16px", textDecoration: "none", borderRadius: 999,
+              fontSize: 14, fontWeight: 700, textAlign: "center", color: "#64748B",
+            }}>
+              Register
+            </Link>
+          </div>
+
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <img src="/sign-in.png" alt="" style={{ width: 56, height: 56, objectFit: "contain", marginBottom: 10 }} />
+            <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#0F172A" }}>Welcome Back</h2>
+            <p style={{ color: "#64748B", margin: 0, fontSize: 14 }}>Sign in to Road Safety Dar es Salaam</p>
           </div>
 
           {error && (
-            <div style={{ background: "#FEE2E2", color: "#DC2626", padding: "12px 16px", borderRadius: 8, marginBottom: 16, fontSize: 14 }}>
+            <div
+              role="alert"
+              style={{
+                background: "#FEE2E2",
+                color: "#DC2626",
+                padding: "10px 14px",
+                borderRadius: 10,
+                marginBottom: 16,
+                fontSize: 13,
+                fontWeight: 500,
+                border: "1px solid #FECACA",
+              }}
+            >
               {error}
             </div>
           )}
 
-          {/* Google Sign In */}
-          <button
-            onClick={handleGoogleLogin}
-            style={{ width: "100%", background: "#fff", color: "#1E293B", border: "1px solid #E2E8F0", padding: "14px", borderRadius: 45, fontSize: 16, fontWeight: 600, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Continue with Google
-          </button>
+          {/* Google */}
+              <button
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  background: "#fff",
+                  color: "#0F172A",
+                  border: "1px solid #E2E8F0",
+                  padding: "12px 16px",
+                  borderRadius: 999,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  minHeight: 48,
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Continue with Google
+              </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-            <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
-            <span style={{ fontSize: 13, color: "#94A3B8" }}>or</span>
-            <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
-          </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+                <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500 }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+              </div>
 
-          {/* Email Sign In */}
+          {/* Sign-in Form */}
           <form onSubmit={handleEmailLogin}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 16 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>Email</span>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Email *</span>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="your@email.com"
-                style={{ padding: "12px 16px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 16, minHeight: 48 }}
-              />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                style={{ padding: "12px 16px", border: "1px solid #E2E8F0", borderRadius: 8, fontSize: 16, minHeight: 48 }}
+                type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                required placeholder="your@email.com" autoComplete="email"
+                style={{ padding: "11px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 15, minHeight: 46, outline: "none" }}
+                onFocus={(e) => (e.target.style.borderColor = "#3B82F6")}
+                onBlur={(e) => (e.target.style.borderColor = "#E2E8F0")}
               />
             </label>
 
-            <button type="submit" disabled={loading} style={{ width: "100%", background: "#3B82F6", color: "#fff", border: "none", padding: "14px", borderRadius: 45, fontSize: 16, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1, marginBottom: 16 }}>
-              {loading ? "Signing in..." : "Sign In"}
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Password *</span>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"} value={password}
+                  onChange={(e) => setPassword(e.target.value)} required minLength={6}
+                  placeholder="••••••••" autoComplete="current-password"
+                  style={{ width: "100%", padding: "11px 44px 11px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 15, minHeight: 46, outline: "none" }}
+                  onFocus={(e) => (e.target.style.borderColor = "#3B82F6")}
+                  onBlur={(e) => (e.target.style.borderColor = "#E2E8F0")}
+                />
+                <button type="button" onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 6, cursor: "pointer", color: "#64748B" }}>
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </label>
+
+            <button type="submit" disabled={loading} style={{
+                width: "100%", background: "#3B82F6", color: "#fff", border: "none",
+                padding: "13px 16px", borderRadius: 999, fontSize: 15, fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, minHeight: 48,
+                boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)", marginBottom: 16,
+              }}>
+              {loading ? "Please wait…" : "Sign In"}
             </button>
           </form>
 
+          {/* Register link */}
           <div style={{ textAlign: "center", fontSize: 14, color: "#475569" }}>
-            <span>Don&apos;t have an account? </span>
-            <button onClick={async () => { setError(""); setLoading(true); const { error: err } = await supabase.auth.signUp({ email, password }); setLoading(false); if (err) setError(err.message); else alert("Check your email for confirmation link!"); }} disabled={loading || !email} style={{ background: "none", border: "none", color: "#3B82F6", fontWeight: 600, cursor: "pointer", fontSize: 14, padding: 0 }}>
+            Don&apos;t have an account?{" "}
+            <Link href="/register" style={{ color: "#3B82F6", fontWeight: 700, textDecoration: "none" }}>
               Register
-            </button>
-          </div>
-
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <Link href="/dashboard" style={{ color: "#475569", fontSize: 13, textDecoration: "none" }}>
-              Continue as Guest
             </Link>
           </div>
+
+          {/* Divider before guest */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 16px" }}>
+            <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+            <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              or
+            </span>
+            <div style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
+          </div>
+
+          {/* Continue as Guest */}
+          <button
+            onClick={handleContinueAsGuest}
+            disabled={loading}
+            style={{
+              width: "100%",
+              background: "transparent",
+              color: "#475569",
+              border: "1px solid #E2E8F0",
+              padding: "12px 16px",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              minHeight: 46,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#F8FAFC";
+              e.currentTarget.style.borderColor = "#CBD5E1";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "#E2E8F0";
+            }}
+          >
+            <span>👋</span>
+            Continue as Guest
+          </button>
+          <p style={{ fontSize: 11, color: "#94A3B8", textAlign: "center", margin: "8px 0 0" }}>
+            Browse the dashboard without an account. No data will be saved.
+          </p>
         </div>
       </div>
 
-      {/* Footer */}
       <footer
         style={{
           marginTop: "auto",
           textAlign: "center",
-          padding: "32px 24px",
+          padding: "24px 20px",
           background: "linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)",
           borderTop: "1px solid #E2E8F0",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <img src="/accident-protection.png" alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.7 }} />
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>Road Safety Dar es Salaam</span>
+            <img src="/accident-protection.png" alt="" style={{ width: 18, height: 18, opacity: 0.7 }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#0F172A" }}>Road Safety Dar es Salaam</span>
           </div>
-          <div style={{ fontSize: 12, color: "#64748B" }}>
-            &copy; {new Date().getFullYear()} <strong>Mwijay Davie</strong>
+          <div style={{ fontSize: 11, color: "#64748B" }}>
+            &copy; {new Date().getFullYear()} <strong>Road Safety Dar es Salaam</strong>
           </div>
         </div>
       </footer>
+
+      <style>{`
+        @media (max-width: 480px) {
+          .rsd-name-fields { flex-direction: column !important; }
+        }
+      `}</style>
     </div>
   );
 }

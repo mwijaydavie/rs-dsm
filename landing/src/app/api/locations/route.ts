@@ -1,59 +1,101 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+// GET /api/locations
+// Returns Dar es Salaam districts, wards, streets, or search results.
+// All from the Supabase REST API (PostgREST, HTTPS).
 
-export async function GET(request: Request) {
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const district = searchParams.get("district");
   const ward = searchParams.get("ward");
   const query = searchParams.get("q");
 
+  const sb = getSupabaseAdmin();
+
   // Districts
   if (!district && !ward && !query) {
-    const districts = await prisma.location.groupBy({
-      by: ["district", "districtCode"],
-      where: { region: "DAR-ES-SALAAM" },
-    });
-    return NextResponse.json(
-      districts.map((d) => ({ name: d.district, code: d.districtCode }))
-    );
+    const { data, error } = await sb
+      .from("Location")
+      .select("district, districtCode")
+      .eq("region", "DAR-ES-SALAAM");
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    const seen = new Set<string>();
+    const result: { name: string; code: string }[] = [];
+    for (const r of data ?? []) {
+      const key = `${r.district}|${r.districtCode}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ name: r.district, code: r.districtCode });
+      }
+    }
+    return NextResponse.json(result);
   }
 
-  // Wards for district
+  // Wards
   if (district && !ward) {
-    const wards = await prisma.location.groupBy({
-      by: ["ward", "wardCode"],
-      where: { district, region: "DAR-ES-SALAAM" },
-    });
-    return NextResponse.json(
-      wards.map((w) => ({ name: w.ward, code: w.wardCode }))
-    );
+    const { data, error } = await sb
+      .from("Location")
+      .select("ward, wardCode")
+      .eq("district", district)
+      .eq("region", "DAR-ES-SALAAM");
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const seen = new Set<string>();
+    const result: { name: string; code: string }[] = [];
+    for (const r of data ?? []) {
+      const key = `${r.ward}|${r.wardCode}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ name: r.ward, code: r.wardCode });
+      }
+    }
+    return NextResponse.json(result);
   }
 
   // Streets for ward
   if (district && ward) {
-    const streets = await prisma.location.findMany({
-      where: { district, ward, region: "DAR-ES-SALAAM" },
-      select: { id: true, street: true, places: true },
-      orderBy: { street: "asc" },
-    });
-    return NextResponse.json(streets.filter((s) => s.street));
+    const { data, error } = await sb
+      .from("Location")
+      .select("id, street, places")
+      .eq("district", district)
+      .eq("ward", ward)
+      .eq("region", "DAR-ES-SALAAM")
+      .order("street", { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json((data ?? []).filter((s) => s.street));
   }
 
-  // Search
+  // Free-text search
   if (query) {
-    const results = await prisma.location.findMany({
-      where: {
-        region: "DAR-ES-SALAAM",
-        OR: [
-          { street: { contains: query } },
-          { places: { contains: query } },
-          { ward: { contains: query } },
-          { district: { contains: query } },
-        ],
-      },
-      take: 20,
-    });
-    return NextResponse.json(results);
+    const q = `%${query}%`;
+    const { data, error } = await sb
+      .from("Location")
+      .select("id, district, ward, street, places")
+      .eq("region", "DAR-ES-SALAAM")
+      .or(`street.ilike.${q},places.ilike.${q},ward.ilike.${q},district.ilike.${q}`)
+      .limit(20);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(data ?? []);
   }
 
   return NextResponse.json({ error: "bad request" }, { status: 400 });

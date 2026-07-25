@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import LoadingScreenWrapper from "@/components/LoadingScreenWrapper";
 
 export const metadata: Metadata = {
   title: "Road Safety Dar es Salaam — Real-time Accident Intelligence",
@@ -16,12 +17,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+        <meta name="theme-color" content="#1E3A5F" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Road Safety Dar" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer />
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer />
       </head>
-      <body>{children}</body>
+      <body>
+        <LoadingScreenWrapper />
+        {children}
+      </body>
     </html>
   );
 }
