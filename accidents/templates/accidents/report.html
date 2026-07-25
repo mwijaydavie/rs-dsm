@@ -1,19 +1,19 @@
 {% extends "accidents/base.html" %}
 {% load static %}
-{% block title %}Report an Accident — Road Safety Dar{% endblock %}
+{% block title %}Ripoti Ajali — Road Safety Dar{% endblock %}
 {% block content %}
 <section class="form-wrap">
   <div class="form-header">
     <div>
-      <h2>Report a Road Accident</h2>
-      <p class="muted">Help us build a safer Dar es Salaam. All fields except <em>description</em> are required.</p>
+      <h2>Fomu ya Kuripoti Ajali Barabarani</h2>
+      <p class="muted">Tusaidie kujenga Dar es Salaam salama. Sehemu zote isipokuwa maelezo zinahitajika.</p>
     </div>
     <img src="{% static 'img/accident-icon.png' %}" alt="" class="form-header-img" />
   </div>
 
   {% if form.errors %}
     <div class="alert error">
-      <strong>⚠ Please fix the errors below:</strong>
+      <strong>Tafadhali sahihisha makosa yafuatayo:</strong>
       <ul>
         {% for field, errors in form.errors.items %}
           {% for err in errors %}
@@ -24,49 +24,32 @@
     </div>
   {% endif %}
 
-  <form method="post" id="accidentForm" class="grid" novalidate>
+  <form method="post" id="accidentForm" class="grid" novalidate enctype="multipart/form-data">
     {% csrf_token %}
 
-    <label>Reporter type
-      {{ form.reporter_type }}
-    </label>
-
-    <label>Severity
-      {{ form.severity }}
-    </label>
-
-    <label>Vehicle type
-      {{ form.vehicle_types }}
-    </label>
-
-    <label>Date & time
-      {{ form.occurred_at }}
-    </label>
-
-    <label>GPS Latitude
-      {{ form.lat }}
-    </label>
-    <label>GPS Longitude
-      {{ form.lng }}
-    </label>
-
+    <!-- Mahali (GPS) - Auto-captured -->
     <div class="gps-section" style="grid-column: span 2; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem;">
-      <button type="button" id="gpsBtn" class="btn-secondary" style="transition: all 0.2s;">📍 Use My Current Location</button>
+      <label style="font-weight: 600; color: #1a1a2e; font-size: 0.95rem;">Mahali (GPS)</label>
+      <button type="button" id="gpsBtn" class="btn-secondary" style="transition: all 0.2s;">Tumia Mahali Yangu ya Sasa</button>
       <div id="gps-toast" class="gps-toast" role="alert" aria-live="polite" style="display: none; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500;">
-        <span id="gps-toast-icon">📍</span>
-        <span id="gps-toast-msg">Location captured</span>
+        <span id="gps-toast-icon">✓</span>
+        <span id="gps-toast-msg">Mahali vimekamatwa</span>
       </div>
     </div>
 
+    <!-- Lat/Lng hidden fields -->
+    {{ form.lat }}
+    {{ form.lng }}
+
     <div class="location-picker">
       <label class="location-label">
-        <span class="lbl">📍 Pick your location</span>
-        <small class="hint">Choose the closest known landmark — coordinates fill in automatically.</small>
+        <span class="lbl">Tafuta Mahali</span>
+        <small class="hint">Andika jina la mahali kama Kariakoo, Ubungo, nk.</small>
         <input
           type="text"
           id="locationSearch"
           class="location-search"
-          placeholder="🔍 Search e.g. Kariakoo, Ubungo Interchange, Kurasini Bridge…"
+          placeholder="Tafuta mahali..."
           autocomplete="off"
         />
         <div id="locationSuggestions" class="location-suggestions" role="listbox" hidden></div>
@@ -74,75 +57,125 @@
 
       <div class="location-cascading">
         <label class="location-label">
-          <span class="lbl">District</span>
+          <span class="lbl">Wilaya</span>
           {{ form.district }}
         </label>
         <label class="location-label">
-          <span class="lbl">Ward (Kata)</span>
+          <span class="lbl">Kata</span>
           {{ form.ward }}
         </label>
       </div>
 
       <label class="location-label">
-        <span class="lbl">Closest landmark / area</span>
+        <span class="lbl">Mahali maarufu / Eneo</span>
         <select id="id_location_picker" class="location-select">
-          <option value="">— First pick a district and ward —</option>
+          <option value="">-- Chagua wilaya na kata kwanza --</option>
         </select>
         {{ form.location_id }}
       </label>
     </div>
 
-    <label>Casualties
-      {{ form.casualties }}
-    </label>
-    <label>Fatalities
-      {{ form.fatalities }}
-    </label>
-    <label>Injuries
-      {{ form.injuries }}
+    <!-- Tarehe na Muda -->
+    <label>Tarehe ya Ajali
+      {{ form.occurred_at }}
     </label>
 
-    <label>Weather
-      {{ form.weather }}
-    </label>
-    <label>Road condition
-      {{ form.road_condition }}
+    <label>Muda wa Ajali
+      <input type="time" id="id_time" name="time" class="form-input" value="{{ now|date:'H:i' }}" />
     </label>
 
-    <label class="full">Description
-      {{ form.description }}
+    <!-- Ukali wa Ajali -->
+    <label>Ukali wa Ajali
+      <select name="severity" id="id_severity" class="form-input" required>
+        <option value="">-- Chagua ukali --</option>
+        <option value="fatal">Ajali Mbaya Sana (Fatal)</option>
+        <option value="serious">Ajali Kubwa (Serious)</option>
+        <option value="minor">Ajali Ndogo (Minor)</option>
+        <option value="critical">Uharibifu wa Mali Tu (Property Damage Only)</option>
+      </select>
     </label>
 
-    <label class="full">Your contact (optional)
-      {{ form.contact }}
+    <!-- Aina ya Chombo - Multi-select checkboxes -->
+    <label style="grid-column: span 2;">Aina ya Chombo</label>
+    <div class="vehicle-checkboxes" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="car" /> Gari Ndogo (Car)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="bus" /> Basi (Bus)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="daladala" /> Daladala (Minibus)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="truck" /> Lori (Truck)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="motorcycle" /> Pikipiki (Motorcycle)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="auto_rickshaw" /> Bajaji (Tricycle)
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="vehicle_types" value="bicycle" /> Baiskeli (Bicycle)
+      </label>
+    </div>
+
+    <!-- Idadi -->
+    <label>Idadi ya Waliofariki
+      <input type="number" name="fatalities" min="0" value="0" class="form-input" required />
+    </label>
+    <label>Idadi ya Waliojeruhiwa
+      <input type="number" name="injuries" min="0" value="0" class="form-input" required />
     </label>
 
+    <!-- Maelezo -->
+    <label class="full">Maelezo ya Ajali
+      <textarea name="description" rows="3" class="form-input" placeholder="Eleza kilichotokea kwa ufupi..." style="width: 100%;"></textarea>
+    </label>
+
+    <!-- Jina la Muripoti (NEW - Required) -->
+    <label class="full">Jina la Muripoti
+      <input type="text" name="reporter_name" class="form-input" placeholder="Andika jina lako kamili" required style="width: 100%;" />
+    </label>
+
+    <!-- Namba ya Simu (NEW - Required with Tanzania validation) -->
+    <label class="full">Namba ya Simu
+      <input type="tel" name="reporter_phone" class="form-input" placeholder="+255XXXXXXXXX au 0XXXXXXXXX" required
+        pattern="^(\+255|0)[67]\d{8}$"
+        title="Namba ya simu si sahihi. Tumia muundo wa +255XXXXXXXXX au 0XXXXXXXXX"
+        style="width: 100%;" />
+      <small style="color: #64748b; font-size: 0.8rem;">Mfano: +255712345678 au 0712345678</small>
+    </label>
+
+    <!-- Picha ya Ajali (NEW - Required) -->
     <div class="upload-section full">
-      <label>Photo evidence (optional)</label>
+      <label>Picha ya Ajali <span style="color: #EF4444;">*</span></label>
       <div class="upload-dropzone" id="uploadDropzone">
-        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;">
+        <input type="file" id="fileInput" accept="image/jpeg,image/png" style="display:none;" required>
         <div class="upload-placeholder" id="uploadPlaceholder">
           <div class="upload-icon">📷</div>
-          <div class="upload-text">Tap to upload a photo</div>
-          <div class="upload-hint">PNG, JPG or WebP · Max 5MB</div>
+          <div class="upload-text">Bonyeza kupakia picha</div>
+          <div class="upload-hint">JPG au PNG · Max 5MB</div>
         </div>
         <div class="upload-preview" id="uploadPreview" style="display:none;">
-          <img id="previewImg" alt="Photo preview">
+          <img id="previewImg" alt="Picha ya ajali">
           <div class="upload-preview-footer">
-            <span id="uploadStatus">Photo added</span>
-            <button type="button" id="removePhotoBtn" class="upload-remove-btn" title="Remove photo">✕</button>
+            <span id="uploadStatus">Picha imepakiwa</span>
+            <button type="button" id="removePhotoBtn" class="upload-remove-btn" title="Ondoa picha">✕</button>
           </div>
         </div>
         <div class="upload-loading" id="uploadLoading" style="display:none;">
           <div class="upload-spinner"></div>
-          <span>Uploading photo...</span>
+          <span>Inapakia picha...</span>
         </div>
       </div>
       <div class="upload-error" id="uploadError" style="display:none;"></div>
+      <input type="hidden" name="photo_url" id="photo_url" />
+      <input type="hidden" name="photo_path" id="photo_path" value="/uploads/no-photo.jpg" />
     </div>
-    {{ form.photo_url }}
 
-    <button type="submit" class="btn-primary full">Submit Report</button>
+    <button type="submit" class="btn-primary full">Tuma Ripoti</button>
   </form>
 </section>
 
@@ -365,11 +398,33 @@
     border-radius: 6px;
     border: 1px solid #fecaca;
   }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .checkbox-label:hover {
+    background: #eff6ff;
+    border-color: #3B82F6;
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #3B82F6;
+  }
   @media (max-width: 600px) {
     .upload-dropzone { min-height: 110px; }
     .upload-icon { font-size: 1.5rem; }
     .upload-text { font-size: 0.9rem; }
     .upload-preview img { max-height: 160px; }
+    .vehicle-checkboxes { grid-template-columns: 1fr !important; }
   }
 </style>
 
@@ -390,22 +445,22 @@
   const searchInput  = $('#locationSearch');
   const suggestBox   = $('#locationSuggestions');
 
-  // ----- Cascading: District → Ward → Locations ----------------------
+  // ----- Cascading: District -> Ward -> Locations ----------------------
   districtSel.addEventListener('change', async () => {
     const district = districtSel.value;
-    wardSel.innerHTML = '<option value="">Loading…</option>';
-    locationPick.innerHTML = '<option value="">— First pick a district and ward —</option>';
+    wardSel.innerHTML = '<option value="">Inapakia...</option>';
+    locationPick.innerHTML = '<option value="">-- Chagua wilaya na kata kwanza --</option>';
     if (!district) {
-      wardSel.innerHTML = '<option value="">Select district first…</option>';
+      wardSel.innerHTML = '<option value="">Chagua wilaya kwanza...</option>';
       return;
     }
     try {
       const res = await fetch(`/api/locations/?district=${encodeURIComponent(district)}`);
       const data = await res.json();
-      wardSel.innerHTML = '<option value="">Select ward…</option>' +
+      wardSel.innerHTML = '<option value="">Chagua kata...</option>' +
         (data.wards || []).map(w => `<option value="${w.name}">${w.name}</option>`).join('');
     } catch (err) {
-      wardSel.innerHTML = '<option value="">Failed to load wards</option>';
+      wardSel.innerHTML = '<option value="">Imeshindwa kupakia kata</option>';
       console.error('ward load failed', err);
     }
   });
@@ -413,9 +468,9 @@
   wardSel.addEventListener('change', async () => {
     const district = districtSel.value;
     const ward = wardSel.value;
-    locationPick.innerHTML = '<option value="">Loading…</option>';
+    locationPick.innerHTML = '<option value="">Inapakia...</option>';
     if (!district || !ward) {
-      locationPick.innerHTML = '<option value="">— First pick a district and ward —</option>';
+      locationPick.innerHTML = '<option value="">-- Chagua wilaya na kata kwanza --</option>';
       return;
     }
     try {
@@ -424,16 +479,15 @@
       const wardObj = (data.wards || []).find(w => w.name === ward);
       const locs = (wardObj && wardObj.locations) || [];
       if (locs.length === 0) {
-        locationPick.innerHTML = '<option value="">— No known locations in this ward —</option>';
+        locationPick.innerHTML = '<option value="">-- Hakuna mahali panajulikana katika kata hii --</option>';
         return;
       }
-      locationPick.innerHTML = '<option value="">— Pick closest landmark —</option>' +
+      locationPick.innerHTML = '<option value="">-- Chagua mahali karibu --</option>' +
         locs.map(l => {
-          const badge = l.accident_hotspot ? ' ⚠️' : '';
-          return `<option value="${l.name}">${l.name}${badge}</option>`;
+          return `<option value="${l.name}">${l.name}</option>`;
         }).join('');
     } catch (err) {
-      locationPick.innerHTML = '<option value="">Failed to load</option>';
+      locationPick.innerHTML = '<option value="">Imeshindwa kupakia</option>';
       console.error('locations load failed', err);
     }
   });
@@ -443,7 +497,6 @@
     const name = locationPick.value;
     if (!name) { locationIdIn.value = ''; return; }
     locationIdIn.value = name;
-    // Use the type-ahead search API (which returns full record w/ lat/lng)
     fetch(`/api/locations/?q=${encodeURIComponent(name)}`)
       .then(r => r.json())
       .then(data => {
@@ -451,12 +504,10 @@
           r.name.toLowerCase() === name.toLowerCase()
         );
         if (match) {
-          // Only auto-fill if lat/lng are empty (don't overwrite manual GPS)
           if (!latInput.value) latInput.value = match.lat;
           if (!lngInput.value) lngInput.value = match.lng;
           if (junctionIn && !junctionIn.value) junctionIn.value = match.name;
-          // Visual feedback
-          showToast('success', '✅', `📍 ${match.name} — coordinates set (${match.lat}, ${match.lng})`);
+          showToast('success', '✓', `${match.name} — coordinates set (${match.lat}, ${match.lng})`);
         }
       })
       .catch(err => console.error('autofill failed', err));
@@ -474,13 +525,13 @@
         const data = await res.json();
         const results = data.results || [];
         if (results.length === 0) {
-          suggestBox.innerHTML = '<div class="location-suggestion"><div class="meta">No matches. Try the dropdowns below.</div></div>';
+          suggestBox.innerHTML = '<div class="location-suggestion"><div class="meta">Hakuna matokeo. Jaribu dropdowns chini.</div></div>';
         } else {
           suggestBox.innerHTML = results.slice(0, 12).map(r => `
-            <div class="location-suggestion" data-name="${r.name.replace(/"/g, '&quot;')}"
+            <div class="location-suggestion" data-name="${r.name.replace(/"/g, '"')}"
                  data-lat="${r.lat}" data-lng="${r.lng}"
                  data-district="${r.district}" data-ward="${r.ward}">
-              <div class="name">${r.name}${r.accident_hotspot ? '<span class="hotspot-badge">⚠ hotspot</span>' : ''}</div>
+              <div class="name">${r.name}</div>
               <div class="meta">${r.type} · ${r.ward}, ${r.district}</div>
             </div>
           `).join('');
@@ -501,14 +552,11 @@
     const district = item.dataset.district;
     const ward     = item.dataset.ward;
 
-    // Fill the search box
     searchInput.value = name;
     suggestBox.hidden = true;
-    // Cascade: set district → ward → location
     if (districtSel.value !== district) {
       districtSel.value = district;
       districtSel.dispatchEvent(new Event('change'));
-      // wait for wards to load before setting ward
       setTimeout(() => {
         wardSel.value = ward;
         wardSel.dispatchEvent(new Event('change'));
@@ -524,7 +572,6 @@
     }
   });
 
-  // Close suggestions on outside click
   document.addEventListener('click', (e) => {
     if (!suggestBox.contains(e.target) && e.target !== searchInput) {
       suggestBox.hidden = true;
@@ -532,9 +579,24 @@
   });
 
   // ====================================================================
-  //  GPS BUTTON  (kept as-is for the user who wants their exact spot)
+  //  GPS BUTTON + Reverse Geocoding
   // ====================================================================
   document.getElementById('gpsBtn').addEventListener('click', captureGPS);
+
+  async function reverseGeocode(lat, lon) {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=sw`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return {
+        district: data.address.city_district || data.address.suburb || '',
+        ward: data.address.neighbourhood || data.address.quarter || ''
+      };
+    } catch (error) {
+      console.error('Geocoding failed:', error);
+      return { district: '', ward: '' };
+    }
+  }
 
   function captureGPS() {
     const btn = document.getElementById('gpsBtn');
@@ -543,16 +605,16 @@
     const toastIcon = document.getElementById('gps-toast-icon');
 
     btn.disabled = true;
-    btn.textContent = '⏳ Getting location...';
+    btn.textContent = 'Inapata mahali...';
 
     if (!navigator.geolocation) {
-      showToast('error', '❌', 'Geolocation is not supported by your browser.');
+      showToast('error', 'X', 'GPS haitumiki kwenye kifaa chako.');
       resetBtn();
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
-      function(position) {
+      async function(position) {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         const accuracy = Math.round(position.coords.accuracy);
@@ -563,8 +625,34 @@
         if (latField) latField.value = lat.toFixed(6);
         if (lngField) lngField.value = lng.toFixed(6);
 
-        showToast('success', '✅', `Location captured — accuracy ±${accuracy}m`);
-        btn.textContent = `✅ Location Set (±${accuracy}m)`;
+        // Reverse geocode to auto-fill district and ward
+        const location = await reverseGeocode(lat, lng);
+        if (location.district && districtSel) {
+          // Try to match district
+          const districtOptions = districtSel.options;
+          for (let i = 0; i < districtOptions.length; i++) {
+            if (districtOptions[i].value.toLowerCase() === location.district.toLowerCase()) {
+              districtSel.value = districtOptions[i].value;
+              districtSel.dispatchEvent(new Event('change'));
+              break;
+            }
+          }
+        }
+        if (location.ward && wardSel) {
+          setTimeout(() => {
+            const wardOptions = wardSel.options;
+            for (let i = 0; i < wardOptions.length; i++) {
+              if (wardOptions[i].value.toLowerCase().includes(location.ward.toLowerCase())) {
+                wardSel.value = wardOptions[i].value;
+                wardSel.dispatchEvent(new Event('change'));
+                break;
+              }
+            }
+          }, 500);
+        }
+
+        showToast('success', '✓', `Mahali vimekamatwa — usahihi ±${accuracy}m`);
+        btn.textContent = `Mahali Vimewekwa (±${accuracy}m)`;
         btn.style.background = '#d4edda';
         btn.style.color = '#1f9d55';
         btn.style.border = '2px solid #1f9d55';
@@ -572,11 +660,11 @@
       },
       function(error) {
         const messages = {
-          1: 'Location access denied. Please allow location in browser settings.',
-          2: 'Location unavailable. Please enter coordinates manually.',
-          3: 'Location request timed out. Please try again.',
+          1: 'Ruhusa ya GPS imekataliwa. Tafadhali ruhusu kwenye mipangilio ya kivinjari.',
+          2: 'Mahali haipatikani. Tafadhali ingiza kuratibu manually.',
+          3: 'Ombi la GPS limeisha muda. Tafadhali jaribu tena.',
         };
-        showToast('error', '❌', messages[error.code] || 'Location error. Try again.');
+        showToast('error', 'X', messages[error.code] || 'Hitilafu ya GPS. Jaribu tena.');
         resetBtn();
       },
       {
@@ -614,13 +702,13 @@
   function resetBtn() {
     const btn = document.getElementById('gpsBtn');
     btn.disabled = false;
-    btn.textContent = '📍 Use My Current Location';
+    btn.textContent = 'Tumia Mahali Yangu ya Sasa';
     btn.style.background = '';
     btn.style.color = '';
     btn.style.border = '';
   }
 
-  // ===== Photo Upload (direct to Cloudinary, no branding) =====
+  // ===== Photo Upload (direct to Cloudinary) =====
   var dropzone = document.getElementById('uploadDropzone');
   var fileInput = document.getElementById('fileInput');
   var placeholder = document.getElementById('uploadPlaceholder');
@@ -631,8 +719,9 @@
   var errorEl = document.getElementById('uploadError');
   var removeBtn = document.getElementById('removePhotoBtn');
   var photoUrlInput = document.getElementById('photo_url');
+  var photoPathInput = document.getElementById('photo_path');
 
-  var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  var ALLOWED_TYPES = ['image/jpeg', 'image/png'];
   var MAX_SIZE = 5 * 1024 * 1024;
 
   function showError(msg) {
@@ -648,12 +737,12 @@
   }
 
   function validateFile(file) {
-    if (!file) return 'No file selected.';
+    if (!file) return 'Hakuna picha iliyochaguliwa.';
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return 'Invalid file type. Only PNG, JPG, WebP and GIF are allowed.';
+      return 'Picha lazima iwe JPG au PNG.';
     }
     if (file.size > MAX_SIZE) {
-      return 'File is too large. Maximum size is 5MB.';
+      return 'Picha ni kubwa sana. Ukubwa wa juu ni 5MB.';
     }
     return null;
   }
@@ -665,11 +754,12 @@
     loading.style.display = 'none';
     dropzone.classList.add('has-image');
     dropzone.classList.remove('has-error');
-    statusEl.textContent = '✅ Photo uploaded';
+    statusEl.textContent = 'Picha imepakiwa';
   }
 
   function resetUpload() {
     photoUrlInput.value = '';
+    photoPathInput.value = '/uploads/no-photo.jpg';
     preview.style.display = 'none';
     placeholder.style.display = 'block';
     loading.style.display = 'none';
@@ -697,11 +787,12 @@
       var data = await resp.json();
       if (!resp.ok) throw new Error(data.error && data.error.message ? data.error.message : 'Upload failed');
       photoUrlInput.value = data.secure_url;
+      photoPathInput.value = data.secure_url;
       showPreview(data.secure_url);
     } catch (err) {
       loading.style.display = 'none';
       placeholder.style.display = 'block';
-      showError('Upload failed: ' + err.message + '. Please try again.');
+      showError('Picha imeshindwa kupakia: ' + err.message + '. Tafadhali jaribu tena.');
     }
   }
 
@@ -714,7 +805,6 @@
     uploadToCloudinary(file);
   }
 
-  // Click to upload
   dropzone.addEventListener('click', function(e) {
     if (e.target === removeBtn || removeBtn.contains(e.target)) return;
     fileInput.click();
@@ -724,7 +814,6 @@
     if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
   });
 
-  // Drag & drop
   dropzone.addEventListener('dragover', function(e) {
     e.preventDefault();
     dropzone.style.borderColor = '#3B82F6';
@@ -741,10 +830,37 @@
     if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
-  // Remove photo
   removeBtn.addEventListener('click', function(e) {
     e.stopPropagation();
     resetUpload();
+  });
+
+  // ===== Form validation before submit =====
+  document.getElementById('accidentForm').addEventListener('submit', function(e) {
+    // Validate phone number
+    var phone = document.querySelector('[name="reporter_phone"]').value;
+    var phoneRegex = /^(\+255|0)[67]\d{8}$/;
+    if (!phoneRegex.test(phone)) {
+      e.preventDefault();
+      alert('Namba ya simu si sahihi. Tumia muundo wa +255XXXXXXXXX au 0XXXXXXXXX');
+      return;
+    }
+
+    // Validate photo is uploaded
+    var photoUrl = document.getElementById('photo_url').value;
+    if (!photoUrl) {
+      e.preventDefault();
+      alert('Tafadhali pakia picha ya ajali.');
+      return;
+    }
+
+    // Validate at least one vehicle type selected
+    var vehicleChecked = document.querySelectorAll('input[name="vehicle_types"]:checked');
+    if (vehicleChecked.length === 0) {
+      e.preventDefault();
+      alert('Tafadhali chagua angalau aina moja ya chombo.');
+      return;
+    }
   });
 </script>
 {% endblock %}

@@ -1,105 +1,204 @@
-<!-- accidents/templates/accidents/admin_users.html -->
 {% extends "accidents/base.html" %}
 
-{% block title %}User Management — Road Safety Dar es Salaam{% endblock %}
+{% block title %}Watumiaji — Road Safety Dar es Salaam{% endblock %}
 
 {% block content %}
 <div class="admin-container">
 
   <div class="page-header">
     <div>
-      <h1>👥 User Management</h1>
+      <h1>Watumiaji</h1>
       <p class="page-subtitle">
-        {{ total_users }} registered user{{ total_users|pluralize }}.
-        Assign roles to promote community members to editors/officers.
+        Jumla ya watumiaji {{ total_users }}.
+        Idhini au kukataa maombi ya maafisa wapya.
       </p>
     </div>
-    <a href="/authority/" class="btn-secondary">← Authority Dashboard</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="stat-badge">Jumla: {{ total_users }}</span>
+      <span class="stat-badge stat-badge--pending">Zinangoja: {{ pending_count|default:"0" }}</span>
+    </div>
   </div>
 
-  <!-- Django Messages -->
   {% if messages %}
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
   {% endif %}
 
+  <!-- Pending Approvals Section -->
+  {% if pending_users %}
+  <div class="section-card">
+    <div class="section-card-header">
+      <h2>Maombi Yanayongoja Idhini</h2>
+      <span class="pending-badge">{{ pending_users|length }} inangoja</span>
+    </div>
+    <div class="table-wrapper">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Jina</th>
+            <th>Barua Pepe</th>
+            <th>Simu</th>
+            <th>Jukumu</th>
+            <th>Tarehe</th>
+            <th>Hatua</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pu in pending_users %}
+          <tr>
+            <td>
+              <strong>{{ pu.user.get_full_name|default:pu.user.username }}</strong>
+            </td>
+            <td>{{ pu.user.email }}</td>
+            <td>{{ pu.phone|default:"-" }}</td>
+            <td>
+              <span class="role-badge role-badge--{{ pu.role }}">
+                {% if pu.role == "editor" %}Afisa wa TANROADS
+                {% elif pu.role == "police" %}Polisi
+                {% elif pu.role == "admin" %}Admin
+                {% else %}{{ pu.get_role_display }}
+                {% endif %}
+              </span>
+            </td>
+            <td style="font-size:0.85rem;color:#666;">{{ pu.user.date_joined|date:"d M Y H:i" }}</td>
+            <td>
+              <div style="display:flex;gap:8px;">
+                <form method="POST" action="{% url 'admin_set_role' pu.user.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" class="btn-approve">Idhinisha</button>
+                </form>
+                <form method="POST" action="{% url 'admin_set_role' pu.user.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="reject">
+                  <button type="submit" class="btn-reject">Kataa</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Role explanation -->
   <div class="role-legend">
     <div class="role-legend__item">
-      <span class="role-badge role-badge--user">Member</span>
-      <span>Can submit reports, track own submissions, upvote incidents</span>
+      <span class="role-badge role-badge--user">Mwanachama</span>
+      <span>Anaweza kutuma ripoti, kuona ripoti zake, kuthibitisha matukio</span>
     </div>
     <div class="role-legend__item">
-      <span class="role-badge role-badge--editor">Officer</span>
-      <span>Everything above + verify/reject reports, access authority dashboard</span>
+      <span class="role-badge role-badge--editor">Afisa</span>
+      <span>Anaweza kuthibitisha/kukataa ripoti, kuona dashibodi ya mamlaka</span>
     </div>
     <div class="role-legend__item">
       <span class="role-badge role-badge--admin">Admin</span>
-      <span>Everything above + assign roles, access Django admin, delete records</span>
+      <span>Anaweza kubadilisha majukumu ya watumiaji, kuidhinisha maombi</span>
     </div>
   </div>
 
-  <!-- Users Table -->
-  <div class="table-wrapper">
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Current Role</th>
-          <th>Reports Submitted</th>
-          <th>Reports Actioned</th>
-          <th>Change Role</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in profile_data %}
-        <tr>
-          <td>
-            <strong>{{ item.profile.display_name }}</strong><br>
-            <small style="color:#666">{{ item.profile.user.email }}</small><br>
-            <small style="color:#888; font-size:0.75rem;">Joined {{ item.profile.user.date_joined|date:"d M Y" }}</small>
-          </td>
-          <td>
-            <span class="role-badge role-badge--{{ item.profile.role }}">
-              {% if item.profile.role == "admin" %}Admin
-              {% elif item.profile.role == "editor" or item.profile.role == "police" %}Officer
-              {% else %}Member
+  <!-- All Users Table -->
+  <div class="section-card">
+    <h2>Watumiaji Wote</h2>
+    <div class="table-wrapper">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Mtumiaji</th>
+            <th>Jukumu la Sasa</th>
+            <th>Ripoti Zilizotumwa</th>
+            <th>Ripoti Zilizothibitishwa</th>
+            <th>Badilisha Jukumu</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in profile_data %}
+          <tr>
+            <td>
+              <strong>{{ item.profile.display_name }}</strong><br>
+              <small style="color:#666">{{ item.profile.user.email }}</small><br>
+              <small style="color:#888; font-size:0.75rem;">Alijiunga {{ item.profile.user.date_joined|date:"d M Y" }}</small>
+            </td>
+            <td>
+              <span class="role-badge role-badge--{{ item.profile.role }}">
+                {% if item.profile.role == "admin" %}Admin
+                {% elif item.profile.role == "editor" %}Afisa wa TANROADS
+                {% elif item.profile.role == "police" %}Polisi
+                {% else %}Mwanachama
+                {% endif %}
+              </span>
+            </td>
+            <td>{{ item.submitted_count }}</td>
+            <td>
+              {% if item.profile.role == "editor" or item.profile.role == "police" or item.profile.role == "admin" %}
+                {{ item.verified_count }} zimethibitishwa
+              {% else %}
+                —
               {% endif %}
-            </span>
-          </td>
-          <td>📝 {{ item.submitted_count }}</td>
-          <td>
-            {% if item.profile.role == "editor" or item.profile.role == "police" or item.profile.role == "admin" %}
-              🛡️ {{ item.verified_count }} verified
-            {% else %}
-              —
-            {% endif %}
-          </td>
-          <td>
-            <form method="POST" action="{% url 'admin_set_role' item.profile.user.id %}" class="role-form">
-              {% csrf_token %}
-              <select name="role" onchange="this.form.submit()" class="role-select" {% if item.profile.user == user %}disabled title="You cannot demote yourself"{% endif %}>
-                {% for code, label in role_choices %}
-                  <option value="{{ code }}" {% if item.profile.role == code %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+            <td>
+              <form method="POST" action="{% url 'admin_set_role' item.profile.user.id %}" class="role-form">
+                {% csrf_token %}
+                <select name="role" onchange="this.form.submit()" class="role-select" {% if item.profile.user == user %}disabled title="Huwezi kujibadilisha mwenyewe"{% endif %}>
+                  {% for code, label in role_choices %}
+                    <option value="{{ code }}" {% if item.profile.role == code %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>
 
 <style>
-  .admin-container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
+  .admin-container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
   .page-header { display: flex; justify-content: space-between; align-items: flex-start;
                  flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
   .page-header h1 { margin: 0 0 0.4rem; color: var(--red); }
   .page-subtitle { color: #666; margin: 0; }
+
+  .stat-badge {
+    display: inline-block; padding: 0.35rem 0.75rem; border-radius: 20px;
+    background: #e2e8f0; color: var(--navy); font-weight: 600; font-size: 0.85rem;
+  }
+  .stat-badge--pending { background: #fff3cd; color: #856404; }
+
+  .section-card {
+    background: white; border-radius: 12px; padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 2rem;
+  }
+  .section-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .section-card-header h2 { margin: 0; font-size: 1.3rem; color: var(--navy); }
+  .pending-badge {
+    background: #EF4444; color: white; padding: 0.25rem 0.75rem;
+    border-radius: 20px; font-weight: 700; font-size: 0.85rem;
+  }
+
+  .btn-approve {
+    background: #22C55E; color: white; border: none;
+    padding: 0.4rem 0.85rem; border-radius: 6px;
+    font-weight: 600; font-size: 0.8rem; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-approve:hover { background: #16A34A; }
+  .btn-reject {
+    background: #EF4444; color: white; border: none;
+    padding: 0.4rem 0.85rem; border-radius: 6px;
+    font-weight: 600; font-size: 0.8rem; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-reject:hover { background: #DC2626; }
 
   /* Alerts */
   .alert { padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;
@@ -114,9 +213,8 @@
   .role-legend__item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
 
   /* Table styles */
-  .table-wrapper { overflow-x: auto; border-radius: 12px;
-                   box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-  .users-table { width: 100%; border-collapse: collapse; background: white; }
+  .table-wrapper { overflow-x: auto; border-radius: 12px; }
+  .users-table { width: 100%; border-collapse: collapse; }
   .users-table th { background: var(--navy); color: white; padding: 0.85rem 1rem;
                     text-align: left; font-size: 0.85rem; text-transform: uppercase;
                     letter-spacing: 0.05em; }

@@ -197,32 +197,32 @@ def admin_users(request):
     """
     GET /admin-panel/users/
 
-    Lists all registered users with their current roles.
+    List all users with their profile, role, and submission counts.
+    Passes ``profile_data`` (list of dicts) and ``role_choices`` to the template.
+    Also shows pending users (inactive officers) for approve/reject.
     """
-    profiles = (
-        UserProfile.objects
-        .select_related("user")
-        .order_by("-created_at")
-    )
-
+    profiles = UserProfile.objects.select_related("user").order_by("user__date_joined")
     profile_data = []
-    for profile in profiles:
-        submitted = Accident.objects.filter(
-            submitted_by=profile.user
-        ).count()
-        verified = Accident.objects.filter(
-            verified_by=profile.user
-        ).count()
-        profile_data.append({
-            "profile": profile,
+    pending_users = []
+    for p in profiles:
+        submitted = Accident.objects.filter(submitted_by=p.user).count()
+        verified = Accident.objects.filter(verified_by=p.user).count()
+        item = {
+            "profile": p,
             "submitted_count": submitted,
             "verified_count": verified,
-        })
+        }
+        profile_data.append(item)
+        # Check if officer is pending approval (user created but not active)
+        if p.role in ("editor", "police") and not p.user.is_active:
+            pending_users.append(p)
 
     return render(request, "accidents/admin_users.html", {
         "profile_data": profile_data,
-        "total_users": len(profile_data),
+        "pending_users": pending_users,
+        "pending_count": len(pending_users),
         "role_choices": UserProfile.ROLE_CHOICES,
+        "total_users": profiles.count(),
     })
 
 
@@ -232,43 +232,57 @@ def admin_set_role(request, user_id):
     """
     POST /admin-panel/users/<id>/set-role/
 
-    Updates a user's role. Admin only.
+    Supports two modes:
+    1. Role change: via ``role`` POST parameter
+    2. Approve/Reject: via ``action`` POST parameter (approve or reject)
+
+    Redirects back to the admin panel with a success/error message.
     """
-    target_user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(User, pk=user_id)
+    profile = get_object_or_404(UserProfile, user=user)
 
-    new_role = request.POST.get("role", "").strip()
-    valid_roles = [choice[0] for choice in UserProfile.ROLE_CHOICES]
+    # Check if this is an approve/reject action
+    action = request.POST.get("action", "").strip()
 
-    if new_role not in valid_roles:
-        messages.error(request, f"Invalid role: {new_role}")
-        return redirect("admin_users")
-
-    if target_user == request.user and new_role != "admin":
-        messages.error(
+    if action == "approve":
+        # Activate the user account (was PENDING, now APPROVED)
+        user.is_active = True
+        user.save()
+        profile.role = profile.role  # Keep existing role
+        profile.save()
+        messages.success(
             request,
-            "You cannot change your own role."
+            f"{profile.display_name} ameidhinishwa kama {dict(UserProfile.ROLE_CHOICES).get(profile.role)}."
         )
         return redirect("admin_users")
 
-    try:
-        profile = target_user.profile
-    except UserProfile.DoesNotExist:
-        messages.error(request, "User profile not found.")
+    elif action == "reject":
+        # Reject the user - remove them or keep inactive
+        user.is_active = False
+        user.save()
+        messages.warning(
+            request,
+            f"{profile.display_name} amekataliwa. Akaunti imesalia bila kutumika."
+        )
         return redirect("admin_users")
 
-    old_role = profile.role
+    # Standard role change
+    new_role = request.POST.get("role", "").strip()
+
+    valid_roles = {code for code, _ in UserProfile.ROLE_CHOICES}
+    if new_role not in valid_roles:
+        messages.error(request, f"Jukumu batili: {new_role}")
+        return redirect("admin_users")
+
+    # When promoting to officer role, make user active if not already
+    if new_role in ("editor", "police") and not user.is_active:
+        user.is_active = True
+        user.save()
+
     profile.role = new_role
-    profile.save(update_fields=["role", "updated_at"])
-
-    logger.info(
-        f"Role changed: {target_user.email} "
-        f"{old_role} → {new_role} "
-        f"by {request.user.email}"
-    )
-
+    profile.save()
     messages.success(
         request,
-        f"✅ {target_user.email} role updated: "
-        f"{old_role} → {new_role}"
+        f"{profile.display_name} sasa ni {dict(UserProfile.ROLE_CHOICES).get(new_role)}."
     )
     return redirect("admin_users")
