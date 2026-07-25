@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --prefix landing",
-  "buildCommand": "npm run build --prefix landing",
-  "outputDirectory": ".next",
+  "buildCommand": "cd landing && npx prisma generate && next build",
+  "outputDirectory": "landing/.next",
   "framework": "nextjs"
 }
