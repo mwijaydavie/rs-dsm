@@ -36,6 +36,7 @@ export default function ReportPage() {
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handlePhotoSelect = (file: File) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -140,18 +141,34 @@ export default function ReportPage() {
     );
   };
 
-  const [errorMsg, setErrorMsg] = useState("");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+    
+    // REQUIRED: District
     if (!selectedDistrict) { setErrorMsg("Please select a district."); setLoading(false); return; }
+    
+    // REQUIRED: Ward
     if (!selectedWard) { setErrorMsg("Please select a ward."); setLoading(false); return; }
+    
+    // REQUIRED: Description
     const baseDescription = (form.description || "").trim();
     if (!baseDescription) { setErrorMsg("Please describe what happened."); setLoading(false); return; }
+    
+    // REQUIRED: Contact (phone or email)
+    const contact = (form.contact || "").trim();
+    if (!contact) { setErrorMsg("Contact information is required for follow-up verification."); setLoading(false); return; }
+    
+    // REQUIRED: Photo evidence (must be uploaded)
+    if (!photoUrl) { 
+      setErrorMsg("Photo evidence is required. Please upload a photo to proceed."); 
+      setLoading(false); 
+      return; 
+    }
+    
     const descriptionWithMood = form.mood ? `[mood:${form.mood}] ${baseDescription}`.trim() : baseDescription;
-    const payload = { ...form, description: descriptionWithMood, photoUrl, occurredAt: new Date().toISOString(), district: selectedDistrict, ward: selectedWard, locationId: selectedStreet };
+    const payload = { ...form, description: descriptionWithMood, photoUrl, contact, occurredAt: new Date().toISOString(), district: selectedDistrict, ward: selectedWard, locationId: selectedStreet };
     try {
       const res = await fetch("/api/accidents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) setSubmitted(true);
@@ -169,7 +186,7 @@ export default function ReportPage() {
         <div style={{ background: "#fff", padding: "clamp(24px, 6vw, 48px)", borderRadius: 28, textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", maxWidth: 400, width: "100%" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
           <h2 style={{ margin: "0 0 8px", fontSize: "clamp(20px, 5vw, 24px)" }}>Report Submitted</h2>
-          <p style={{ color: "#475569", marginBottom: 24, fontSize: 14 }}>Thank you for helping make Dar es Salaam safer.</p>
+          <p style={{ color: "#475569", marginBottom: 24, fontSize: 14 }}>Thank you for helping make Dar es Salaam safer. A traffic officer will review your report shortly.</p>
           <Link href="/dashboard" style={{ background: "#3B82F6", color: "#fff", padding: "12px 32px", borderRadius: 45, textDecoration: "none", fontWeight: 600, display: "inline-block" }}>
             View Map
           </Link>
@@ -196,7 +213,7 @@ export default function ReportPage() {
             <img src="/accident-icon.png" alt="Report" style={{ width: 44, height: 44, objectFit: "contain" }} />
             <div>
               <h2 style={{ margin: 0, fontSize: "clamp(20px, 5vw, 28px)" }}>Report an Accident</h2>
-              <p style={{ color: "#475569", margin: "2px 0 0", fontSize: 14 }}>Swahili or English — either is fine.</p>
+              <p style={{ color: "#475569", margin: "2px 0 0", fontSize: 14 }}>All fields marked with * are required</p>
             </div>
           </div>
 
@@ -206,14 +223,14 @@ export default function ReportPage() {
               <h4 style={sectionTitle}>📍 Location</h4>
               <div className="rsd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={labelStyle}>District</span>
+                  <span style={labelStyle}>District *</span>
                   <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} required style={inputStyle}>
                     <option value="">Select district</option>
                     {districts.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={labelStyle}>Ward</span>
+                  <span style={labelStyle}>Ward *</span>
                   <select value={selectedWard} onChange={(e) => setSelectedWard(e.target.value)} disabled={!selectedDistrict} required style={inputStyle}>
                     <option value="">Select ward</option>
                     {wards.map((w) => <option key={w.code} value={w.name}>{w.name}</option>)}
@@ -227,7 +244,7 @@ export default function ReportPage() {
                   </select>
                 </label>
               </div>
-              <button type="button" onClick={getLocation} className="rsd-location-btn" style={{ marginTop: 10, background: "none", border: "1px solid #E2E8F0", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontSize: 14, minHeight: 44 }}>
+              <button type="button" onClick={getLocation} className="rsd-location-btn" style={{ marginTop: 10, background: "none", border: "1px solid #E2E8F0", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 40, color: "#3B82F6" }}>
                 📍 Use my current location
               </button>
               {locationName && (
@@ -277,14 +294,14 @@ export default function ReportPage() {
               </div>
             </div>
 
-            {/* Photo */}
+            {/* Photo Evidence - REQUIRED */}
             <div style={{ marginBottom: 28 }}>
-              <h4 style={sectionTitle}>📸 Photo Evidence (optional)</h4>
+              <h4 style={sectionTitle}>📸 Photo Evidence *</h4>
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handlePhotoSelect(f); }}
                 onClick={() => document.getElementById("fileInput")?.click()}
-                style={{ border: "2px dashed #CBD5E1", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", textAlign: "center", cursor: "pointer", background: photoPreview ? "#F0FDF4" : "#F8FAFC" }}
+                style={{ border: "2px dashed #CBD5E1", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", textAlign: "center", cursor: "pointer", background: photoPreview ? "#F0FDF4" : "#F8FAFC", transition: "background 0.2s" }}
               >
                 <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: "none" }}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoSelect(f); }} />
@@ -294,13 +311,13 @@ export default function ReportPage() {
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                       {!photoUrl && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); uploadPhoto(); }} disabled={uploading}
-                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: uploading ? "not-allowed" : "pointer", minHeight: 44 }}>
+                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: uploading ? "not-allowed" : "pointer", minHeight: 40, opacity: uploading ? 0.7 : 1 }}>
                           {uploading ? "Uploading..." : "Upload Photo"}
                         </button>
                       )}
                       {photoUrl && <span style={{ color: "#22C55E", fontSize: 14, fontWeight: 600, padding: "8px 0" }}>✅ Photo uploaded</span>}
                       <button type="button" onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                        style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 44 }}>
+                        style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 40 }}>
                         Remove
                       </button>
                     </div>
@@ -308,16 +325,16 @@ export default function ReportPage() {
                 ) : (
                   <div>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
-                    <p style={{ margin: 0, fontSize: 14, color: "#475569" }}>Tap to browse or drag & drop a photo</p>
+                    <p style={{ margin: 0, fontSize: 14, color: "#475569", fontWeight: 500 }}>Tap to browse or drag & drop a photo</p>
                     <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94A3B8" }}>JPEG, PNG, WebP, GIF — max 5 MB</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Description */}
+            {/* Description & Contact */}
             <div style={{ marginBottom: 28 }}>
-              <h4 style={sectionTitle}>📝 Description</h4>
+              <h4 style={sectionTitle}>📝 Description & Contact</h4>
 
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 8 }}>
@@ -350,8 +367,9 @@ export default function ReportPage() {
               </div>
 
               <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="What happened? (English or Swahili)" rows={3}
-                style={{ width: "100%", padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 16, minHeight: 80, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                placeholder="What happened? (English or Swahili)" rows={3} required
+                style={{ width: "100%", padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 16, minHeight: 80, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", outline: "none" }}
+              />
 
               <div className="rsd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -365,14 +383,15 @@ export default function ReportPage() {
               </div>
 
               <label style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 12 }}>
-                <span style={labelStyle}>Contact (optional)</span>
-                <input value={form.contact} onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))} placeholder="phone or email for follow-up" style={inputStyle} />
+                <span style={labelStyle}>Contact (Phone or Email) *</span>
+                <input value={form.contact} onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))} required placeholder="phone or email for follow-up verification" style={inputStyle} />
+                <span style={{ fontSize: 12, color: "#94A3B8" }}>Required for traffic officer follow-up</span>
               </label>
             </div>
 
             {errorMsg && (
               <div style={{ background: "#FEF2F2", color: "#DC2626", padding: "12px 16px", borderRadius: 10, fontSize: 14, marginBottom: 12, border: "1px solid #FECACA" }}>
-                {errorMsg}
+                ⚠ {errorMsg}
               </div>
             )}
             <button type="submit" disabled={loading}
