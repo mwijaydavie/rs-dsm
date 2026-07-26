@@ -142,23 +142,53 @@ export default function ReportPage() {
     setLoading(true);
     setErrorMsg("");
 
+    // REQUIRED: Phone number
     const phone = (form.phone || "").trim();
-    if (!phone) { setErrorMsg("Phone number is required."); setLoading(false); return; }
-
-    if (!photoUrl && !photoFile) { setErrorMsg("Photo evidence is required. Please capture or upload a photo."); setLoading(false); return; }
-
-    if (gpsStatus !== "got" || !gpsCoords) { setErrorMsg("GPS location is required. Please enable location services."); setLoading(false); return; }
-
-    const baseDescription = (form.description || "").trim();
-    if (!baseDescription) { setErrorMsg("Please describe what happened."); setLoading(false); return; }
-
-    if (!photoUrl && photoFile) {
-      setErrorMsg("Please upload the photo first.");
-      setLoading(false);
-      return;
+    if (!phone) { 
+      setErrorMsg("Phone number is required."); 
+      setLoading(false); 
+      return; 
     }
 
-    const contactInfo = [phone, form.firstName, form.lastName].filter(Boolean).join(", ");
+    // REQUIRED: First name
+    const firstName = (form.firstName || "").trim();
+    if (!firstName) { 
+      setErrorMsg("First name is required."); 
+      setLoading(false); 
+      return; 
+    }
+
+    // REQUIRED: Last name
+    const lastName = (form.lastName || "").trim();
+    if (!lastName) { 
+      setErrorMsg("Last name is required."); 
+      setLoading(false); 
+      return; 
+    }
+
+    // REQUIRED: Photo evidence (must be uploaded to Cloudinary)
+    if (!photoUrl) { 
+      setErrorMsg("Photo evidence is required. Please capture or upload a photo and ensure it is uploaded successfully."); 
+      setLoading(false); 
+      return; 
+    }
+
+    // REQUIRED: GPS location
+    if (gpsStatus !== "got" || !gpsCoords) { 
+      setErrorMsg("GPS location is required. Please enable location services."); 
+      setLoading(false); 
+      return; 
+    }
+
+    // REQUIRED: Description
+    const baseDescription = (form.description || "").trim();
+    if (!baseDescription) { 
+      setErrorMsg("Please describe what happened."); 
+      setLoading(false); 
+      return; 
+    }
+
+    const contactInfo = [phone, firstName, lastName].filter(Boolean).join(", ");
     const payload = {
       ...form,
       contact: contactInfo,
@@ -188,9 +218,9 @@ export default function ReportPage() {
     return (
       <div style={{ minHeight: "100vh", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
         <div style={{ background: "#fff", padding: "clamp(24px, 6vw, 48px)", borderRadius: 28, textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", maxWidth: 400, width: "100%" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>Thank You</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✓ Thank You</div>
           <h2 style={{ margin: "0 0 8px", fontSize: "clamp(20px, 5vw, 24px)" }}>Report Submitted</h2>
-          <p style={{ color: "#475569", marginBottom: 24, fontSize: 14 }}>Thank you for helping make Dar es Salaam safer. A traffic officer will review your report.</p>
+          <p style={{ color: "#475569", marginBottom: 24, fontSize: 14 }}>Thank you for helping make Dar es Salaam safer. A traffic officer will review your report shortly.</p>
           <Link href="/" style={{ background: "#3B82F6", color: "#fff", padding: "12px 32px", borderRadius: 45, textDecoration: "none", fontWeight: 600, display: "inline-block" }}>
             Back to Home
           </Link>
@@ -217,12 +247,12 @@ export default function ReportPage() {
             <img src="/accident-icon.png" alt="Report" style={{ width: 44, height: 44, objectFit: "contain" }} />
             <div>
               <h2 style={{ margin: 0, fontSize: "clamp(20px, 5vw, 28px)" }}>Report an Accident</h2>
-              <p style={{ color: "#475569", margin: "2px 0 0", fontSize: 14 }}>Swahili or English - either is fine.</p>
+              <p style={{ color: "#475569", margin: "2px 0 0", fontSize: 14 }}>All fields marked with * are required</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Reporter Information - Phone Number FIRST */}
+            {/* Reporter Information - Phone Number & Name REQUIRED */}
             <div style={{ marginBottom: 28 }}>
               <h4 style={sectionTitle}>Reporter Information</h4>
               <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
@@ -233,15 +263,28 @@ export default function ReportPage() {
                   required placeholder="+255 712 345 678"
                   style={inputStyle}
                 />
+                <span style={{ fontSize: 12, color: "#94A3B8" }}>Required for follow-up verification</span>
               </label>
               <div className="rsd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={labelStyle}>First Name</span>
-                  <input value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} placeholder="Your first name" style={inputStyle} />
+                  <span style={labelStyle}>First Name *</span>
+                  <input 
+                    value={form.firstName} 
+                    onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} 
+                    required
+                    placeholder="Your first name" 
+                    style={inputStyle} 
+                  />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={labelStyle}>Last Name</span>
-                  <input value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} placeholder="Your last name" style={inputStyle} />
+                  <span style={labelStyle}>Last Name *</span>
+                  <input 
+                    value={form.lastName} 
+                    onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} 
+                    required
+                    placeholder="Your last name" 
+                    style={inputStyle} 
+                  />
                 </label>
               </div>
             </div>
@@ -251,7 +294,7 @@ export default function ReportPage() {
               <h4 style={sectionTitle}>Location</h4>
               <div style={{ padding: 16, background: "#F8FAFC", borderRadius: 12, border: "1px solid #E2E8F0" }}>
                 {gpsStatus === "idle" && (
-                  <button type="button" onClick={getGpsLocation} style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 44 }}>
+                  <button type="button" onClick={getGpsLocation} style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
                     Get My Location
                   </button>
                 )}
@@ -261,7 +304,7 @@ export default function ReportPage() {
                 {gpsStatus === "got" && gpsCoords && (
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#22C55E", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
-                      Location captured
+                      ✓ Location captured
                     </div>
                     <div style={{ fontSize: 12, color: "#64748B" }}>
                       Lat: {gpsCoords.lat.toFixed(6)}, Lng: {gpsCoords.lng.toFixed(6)}
@@ -270,11 +313,11 @@ export default function ReportPage() {
                 )}
                 {gpsStatus === "denied" && (
                   <div>
-                    <div style={{ color: "#DC2626", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Location access required</div>
+                    <div style={{ color: "#DC2626", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>⚠ Location access required</div>
                     <p style={{ fontSize: 13, color: "#64748B", margin: 0 }}>
                       Please enable location services in your browser settings and refresh the page.
                     </p>
-                    <button type="button" onClick={getGpsLocation} style={{ marginTop: 8, background: "#DC2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
+                    <button type="button" onClick={getGpsLocation} style={{ marginTop: 8, background: "#DC2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", minHeight: 36 }}>
                       Try Again
                     </button>
                   </div>
@@ -289,20 +332,20 @@ export default function ReportPage() {
                 <div style={{ marginBottom: 12 }}>
                   <video ref={videoRef} autoPlay playsInline style={{ width: "100%", maxHeight: 300, borderRadius: 12, background: "#000" }} />
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button type="button" onClick={capturePhoto} style={{ background: "#22C55E", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 44 }}>
+                    <button type="button" onClick={capturePhoto} style={{ background: "#22C55E", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
                       Capture Photo
                     </button>
-                    <button type="button" onClick={stopCamera} style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 44 }}>
+                    <button type="button" onClick={stopCamera} style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 40 }}>
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                  <button type="button" onClick={startCamera} style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 44 }}>
+                  <button type="button" onClick={startCamera} style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
                     Capture Photo
                   </button>
-                  <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "1px solid #E2E8F0", padding: "10px 20px", borderRadius: 10, fontSize: 14, cursor: "pointer", minHeight: 44 }}>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "1px solid #E2E8F0", padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
                     Upload Photo
                   </button>
                 </div>
@@ -316,7 +359,7 @@ export default function ReportPage() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handlePhotoSelect(f); }}
                 onClick={() => fileInputRef.current?.click()}
-                style={{ border: "2px dashed #CBD5E1", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", textAlign: "center", cursor: "pointer", background: photoPreview ? "#F0FDF4" : "#F8FAFC" }}
+                style={{ border: "2px dashed #CBD5E1", borderRadius: 16, padding: "clamp(16px, 4vw, 32px)", textAlign: "center", cursor: "pointer", background: photoPreview ? "#F0FDF4" : "#F8FAFC", transition: "background 0.2s" }}
               >
                 {photoPreview ? (
                   <div>
@@ -324,20 +367,20 @@ export default function ReportPage() {
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                       {!photoUrl && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); uploadPhoto(); }} disabled={uploading}
-                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: uploading ? "not-allowed" : "pointer", minHeight: 44 }}>
+                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: uploading ? "not-allowed" : "pointer", minHeight: 40, opacity: uploading ? 0.7 : 1 }}>
                           {uploading ? "Uploading..." : "Upload Photo"}
                         </button>
                       )}
-                      {photoUrl && <span style={{ color: "#22C55E", fontSize: 14, fontWeight: 600, padding: "8px 0" }}>Photo uploaded</span>}
+                      {photoUrl && <span style={{ color: "#22C55E", fontSize: 14, fontWeight: 600, padding: "8px 0" }}>✓ Photo uploaded</span>}
                       <button type="button" onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                        style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 44 }}>
+                        style={{ background: "none", border: "1px solid #E2E8F0", padding: "8px 16px", borderRadius: 8, fontSize: 14, cursor: "pointer", minHeight: 40 }}>
                         Remove
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <p style={{ margin: 0, fontSize: 14, color: "#475569" }}>Tap to browse, drag & drop a photo, or use the camera button above</p>
+                    <p style={{ margin: 0, fontSize: 14, color: "#475569", fontWeight: 500 }}>Tap to browse, drag & drop a photo, or use the camera button above</p>
                     <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94A3B8" }}>JPEG, PNG, WebP, GIF - max 5 MB</p>
                   </div>
                 )}
@@ -383,8 +426,9 @@ export default function ReportPage() {
             <div style={{ marginBottom: 28 }}>
               <h4 style={sectionTitle}>Description</h4>
               <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="What happened? (English or Swahili)" rows={3}
-                style={{ width: "100%", padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 16, minHeight: 80, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                placeholder="What happened? (English or Swahili)" rows={3} required
+                style={{ width: "100%", padding: "12px 14px", border: "1px solid #E2E8F0", borderRadius: 10, fontSize: 16, minHeight: 80, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", outline: "none" }}
+              />
 
               <div className="rsd-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -400,7 +444,7 @@ export default function ReportPage() {
 
             {errorMsg && (
               <div style={{ background: "#FEF2F2", color: "#DC2626", padding: "12px 16px", borderRadius: 10, fontSize: 14, marginBottom: 12, border: "1px solid #FECACA" }}>
-                {errorMsg}
+                ⚠ {errorMsg}
               </div>
             )}
             <button type="submit" disabled={loading}
