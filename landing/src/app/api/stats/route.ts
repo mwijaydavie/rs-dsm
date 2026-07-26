@@ -81,6 +81,8 @@ export async function GET() {
     try {
       const vtypes: string[] = JSON.parse(a.vehicleTypes || "[]");
       for (const v of vtypes) {
+        // Skip pedestrian vehicle type - pedestrian is not a vehicle
+        if (v.toLowerCase() === "pedestrian") continue;
         vehicles[v] = (vehicles[v] || 0) + 1;
       }
     } catch {
